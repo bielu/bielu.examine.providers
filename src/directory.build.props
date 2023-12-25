@@ -1,0 +1,19 @@
+<Project>
+
+    <Import Project="../version.props"/>
+
+    <PropertyGroup>
+        <Title>bielu.Umbraco.Cdn</Title>
+        <AssemblyName>$(MSBuildProjectName)</AssemblyName>
+        <AssemblyVersion>$(Version)</AssemblyVersion>
+        <TargetFramework>net6.0</TargetFramework>
+        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+        <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
+    </PropertyGroup>    
+
+    <PropertyGroup>
+        <Authors>Arkadiusz Biel</Authors>
+        <PackageOutputPath>$(MSBuildProjectDirectory)/../../dist</PackageOutputPath>
+    </PropertyGroup>
+
+</Project>

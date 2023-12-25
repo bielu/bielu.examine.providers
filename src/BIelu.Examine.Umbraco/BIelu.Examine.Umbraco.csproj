@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Bielu.Examine.Core\Bielu.Examine.Core.csproj" />
+      <ProjectReference Include="..\Bielu.Examine.ElasticSearch\Bielu.Examine.ElasticSearch.csproj" />
+    </ItemGroup>
+
+</Project>
