@@ -1,47 +1,47 @@
-﻿using Elastic.Clients.Elasticsearch.Analysis;
+﻿using System.Collections;
+using Bielu.Examine.ElasticSearch.Providers;
+using Elastic.Clients.Elasticsearch;
+using Elastic.Clients.Elasticsearch.Analysis;
 using Elastic.Clients.Elasticsearch.Mapping;
 using Examine;
 using Examine.Lucene.Indexing;
 using Examine.Lucene.Search;
 using Examine.Search;
 using Lucene.Net.Documents;
+using Lucene.Net.Index;
 using Lucene.Net.QueryParsers.Classic;
 using Lucene.Net.Search;
+using Lucene.Net.Util;
+using Microsoft.Extensions.Logging;
+using KeywordAnalyzer = Lucene.Net.Analysis.Core.KeywordAnalyzer;
+using PatternAnalyzer = Lucene.Net.Analysis.Miscellaneous.PatternAnalyzer;
 
 namespace Bielu.Examine.ElasticSearch.Queries;
 
 public class ElasticSearchQuery : LuceneSearchQueryBase,  IQueryExecutor, IQuery
 {
-    public readonly ElasticSearchSearcher _searcher;
+    public readonly ElasticsearchExamineSearcher _searcher;
         public string _indexName;
+        private readonly ILoggerFactory _loggerFactory;
         private readonly CustomMultiFieldQueryParser _queryParser;
         public new QueryParser QueryParser => _queryParser;
 
         internal readonly Stack<BooleanQuery> Queries = new Stack<BooleanQuery>();
         internal readonly List<SortField> SortFields = new List<SortField>();
         internal static readonly LuceneSearchOptions EmptyOptions = new LuceneSearchOptions();
-        private const Version LuceneVersion = Version.LUCENE_30;
-        public ElasticSearchQuery(ElasticSearchSearcher searcher, string category, string[] fields, BooleanOperation op,
-            string indexName) : base(category, new StandardAnalyzer(Version.LUCENE_29), fields,
-            EmptyOptions, op)
+        private  LuceneVersion LuceneVersion = LuceneVersion.LUCENE_48;
+       
+        public ElasticSearchQuery(CustomMultiFieldQueryParser queryParser,
+            string category, LuceneSearchOptions searchOptions, BooleanOperation occuranc)
+            : base(queryParser, category,  searchOptions, occuranc)
         {
-            _searcher = searcher;
-            _indexName = indexName;
-            _queryParser = new CustomMultiFieldQueryParser(LuceneVersion, fields, new StandardAnalyzer(Version.LUCENE_29));
-            _queryParser.AllowLeadingWildcard =true;
-        }
-
-        public ElasticSearchQuery(ElasticSearchQuery previous, BooleanOperation op)
-            : base(previous.Category, previous.DefaultAnalyzer, previous._searcher.AllFields, EmptyOptions, op)
-        {
-            _searcher = previous._searcher;
-            _indexName = previous._indexName;
+            _queryParser = queryParser;
         }
 
         public ISearchResults Execute(QueryOptions queryOptions)
         {
             
-            return new ElasticSearchSearchResults(_searcher._client.Value, Query, _indexName, SortFields, maxResults);
+            return new ElasticSearchSearchResults();
         }
 
         protected override LuceneBooleanOperationBase CreateOp()
@@ -53,14 +53,14 @@ public class ElasticSearchQuery : LuceneSearchQueryBase,  IQueryExecutor, IQuery
             => RangeQueryInternal<T>(new[] {fieldName}, fieldValue, fieldValue);
         public IBooleanOperation Field(string fieldName, IExamineValue fieldValue)
             => FieldInternal(fieldName, fieldValue,Occurrence );
-        public override IBooleanOperation ManagedQuery(string query, string[] fields = null)
+        public override IBooleanOperation ManagedQuery(string query, string[]? fields = null)
         {
             //TODO: Instead of AllFields here we should have a reference to the FieldDefinitionCollection
             var fielddefintion =
-                _searcher.AllProperties.Values.Where(x => x.Type == "text").Select(x => x.Name.Name);
+                _searcher.AllProperties.Where(x => x.Value.Type == "text").Select(x => x.Key.Name);
             foreach (var field in fields ?? fielddefintion)
             {
-                var fullTextQuery = FullTextType.GenerateQuery(field, query, DefaultAnalyzer);
+                var fullTextQuery = FullTextType.GenerateQuery(field, query, PatternAnalyzer.DEFAULT_ANALYZER);
                 Query.Add(fullTextQuery,  Occur.SHOULD);
             }
 
@@ -74,15 +74,15 @@ public class ElasticSearchQuery : LuceneSearchQueryBase,  IQueryExecutor, IQuery
         protected override INestedBooleanOperation FieldNested<T>(string fieldName, T fieldValue)
             => RangeQueryInternal<T>(new[] {fieldName}, fieldValue, fieldValue);
 
-        protected override INestedBooleanOperation ManagedQueryNested(string query, string[] fields = null)
+        protected override INestedBooleanOperation ManagedQueryNested(string query, string[]? fields = null)
         {
             
             //TODO: Instead of AllFields here we should have a reference to the FieldDefinitionCollection
             var fielddefintion =
-                _searcher.AllProperties.Values.Where(x => x.Type == "text").Select(x => x.Name.Name);
+                _searcher.AllProperties.Where(x => x.Value.Type == "text").Select(x => x.Key.Name);
             foreach (var field in fields ?? fielddefintion)
             {
-                var fullTextQuery = FullTextType.GenerateQuery(field, query, DefaultAnalyzer);
+                var fullTextQuery = FullTextType.GenerateQuery(field, query, PatternAnalyzer.DEFAULT_ANALYZER);
                 Query.Add(fullTextQuery, Occurrence);
             }
 
@@ -94,24 +94,24 @@ public class ElasticSearchQuery : LuceneSearchQueryBase,  IQueryExecutor, IQuery
             bool maxInclusive = true)
             => RangeQueryInternal(fields, min1, max1, minInclusive, maxInclusive);
 
-        private IIndexFieldValueType FromElasticType(IProperty property)
+        private IIndexFieldValueType FromElasticType(KeyValuePair<PropertyName, IProperty> property)
         {
-            switch (property.Type.ToLowerInvariant())
+            switch (property.Value.Type.ToLowerInvariant())
             {
                 case "date":
-                    return new DateTimeType(property.Name.Name, DateTools.Resolution.MILLISECOND);
+                    return new DateTimeType(property.Key.Name,_loggerFactory, DateResolution.MILLISECOND);
                 case "double":
-                    return new DoubleType(property.Name.Name);
+                    return new DoubleType(property.Key.Name,_loggerFactory);
 
                 case "float":
-                    return new SingleType(property.Name.Name);
+                    return new SingleType(property.Key.Name,_loggerFactory);
 
                 case "long":
-                    return new Int64Type(property.Name.Name);
+                    return new Int64Type(property.Key.Name,_loggerFactory);
                 case "integer":
-                    return new Int32Type(property.Name.Name);
+                    return new Int32Type(property.Key.Name,_loggerFactory);
                 default:
-                    return new FullTextType(property.Name.Name, new StandardAnalyzer(Version.LUCENE_CURRENT));
+                    return new FullTextType(property.Key.Name, _loggerFactory, PatternAnalyzer.DEFAULT_ANALYZER);
             }
         }
 
@@ -133,9 +133,9 @@ public class ElasticSearchQuery : LuceneSearchQueryBase,  IQueryExecutor, IQuery
                 foreach (var valueType in fieldsMapping.Where(e => fields.Contains(e.Key.Name)))
                 {
                   
-                    if (FromElasticType(valueType.Value) is IIndexRangeValueType type)
+                    if (FromElasticType(valueType) is IIndexRangeValueType type)
                     {
-                        var q = ((Indexing.IIndexRangeValueType<T>)type).GetQuery(min, max, minInclusive, maxInclusive);
+                        var q = ((IIndexRangeValueType<T>)type).GetQuery(min, max, minInclusive, maxInclusive);
                         if (q != null)
                         {
                             //CriteriaContext.FieldQueries.Add(new KeyValuePair<IIndexFieldValueType, Query>(type, q));
@@ -182,37 +182,32 @@ public class ElasticSearchQuery : LuceneSearchQueryBase,  IQueryExecutor, IQuery
             {
                 var fieldName = f.FieldName;
 
-                var defaultSort = SortField.STRING;
+                SortFieldType defaultSort;
 
                 switch (f.SortType)
                 {
                     case SortType.Score:
-                        defaultSort = SortField.SCORE;
+                        defaultSort = SortFieldType.SCORE;
                         break;
                     case SortType.DocumentOrder:
-                        defaultSort = SortField.DOC;
+                        defaultSort = SortFieldType.DOC;
                         break;
                     case SortType.String:
-                        defaultSort = SortField.STRING;
+                        defaultSort = SortFieldType.STRING_VAL;
                         break;
                     case SortType.Int:
-                        defaultSort = SortField.INT;
+                        defaultSort = SortFieldType.INT32;
                         break;
                     case SortType.Float:
-                        defaultSort = SortField.FLOAT;
+                        defaultSort = SortFieldType.DOUBLE;
                         break;
                     case SortType.Long:
-                        defaultSort = SortField.LONG;
+                        defaultSort = SortFieldType.INT64;
                         break;
                     case SortType.Double:
-                        defaultSort = SortField.DOUBLE;
+                        defaultSort = SortFieldType.DOUBLE;
                         break;
-                    case SortType.Short:
-                        defaultSort = SortField.SHORT;
-                        break;
-                    case SortType.Byte:
-                        defaultSort = SortField.BYTE;
-                        break;
+                  
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
@@ -253,10 +248,10 @@ public class ElasticSearchQuery : LuceneSearchQueryBase,  IQueryExecutor, IQuery
                 var outer = new BooleanQuery();
                 var inner = new BooleanQuery();
                 var fielddefintion =
-                    _searcher.AllProperties.Values.Where(x => x.Type == "text").Select(x => x.Name.Name);
+                    _searcher.AllProperties.Where(x => x.Value.Type == "text").Select(x => x.Key.Name);
                 foreach (var field in fielddefintion)
                 {
-                    var q =   FullTextType.GenerateQuery(field, query, DefaultAnalyzer);
+                    var q =   FullTextType.GenerateQuery(field, query, PatternAnalyzer.DEFAULT_ANALYZER);
                     if (q != null)
                     {
                         //CriteriaContext.ManagedQueries.Add(new KeyValuePair<IIndexFieldValueType, Query>(type, q));
@@ -499,46 +494,20 @@ public class ElasticSearchQuery : LuceneSearchQueryBase,  IQueryExecutor, IQuery
          }
         #endregion
         private static readonly HashSet<string> EmptyHashSet = new HashSet<string>();
-        internal IBooleanOperation SelectFieldsInternal(ISet<string> loadedFieldNames)
+
+
+        public IOrdering SelectFieldsInternal(ISet<string> fieldNames)
         {
-            Selector = new SetBasedFieldSelector(loadedFieldNames, EmptyHashSet);
-            return CreateOp();
+            throw new NotImplementedException();
         }
 
-        internal IBooleanOperation SelectFieldsInternal(Hashtable loadedFieldNames)
+        public IOrdering SelectFieldInternal(string fieldName)
         {
-            HashSet<string> hs = new HashSet<string>();
-            foreach (string item in loadedFieldNames.Keys)
-            {
-                hs.Add(item);
-            }
-            Selector = new SetBasedFieldSelector(hs, EmptyHashSet);
-            return CreateOp();
+            throw new NotImplementedException();
         }
 
-        internal IBooleanOperation SelectFieldsInternal(params string[] loadedFieldNames)
+        public IOrdering SelectAllFieldsInternal()
         {
-            ISet<string> loaded = new HashSet<string>(loadedFieldNames);
-            Selector = new SetBasedFieldSelector(loaded, EmptyHashSet);
-            return CreateOp();
+            throw new NotImplementedException();
         }
-
-        internal IBooleanOperation SelectFieldInternal(string fieldName)
-        {
-            ISet<string> loaded = new HashSet<string>(new string[] { fieldName });
-            Selector = new SetBasedFieldSelector(loaded, EmptyHashSet);
-            return CreateOp();
-        }
-
-        public IBooleanOperation SelectFirstFieldOnlyInternal()
-        {
-            Selector = new LoadFirstFieldSelector();
-            return CreateOp();
-        }
-        public IBooleanOperation SelectAllFieldsInternal()
-        {
-            Selector = null;
-            return CreateOp();
-        }
-    
 }

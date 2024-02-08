@@ -1,6 +1,7 @@
 ﻿using System.Runtime.Serialization.Formatters.Binary;
 using Lucene.Net.Documents;
 using Lucene.Net.Index;
+using System.Text;
 
 namespace Bielu.Examine.ElasticSearch.Model;
 
@@ -32,26 +33,5 @@ public class ElasticDocument : Dictionary<string, object>
     public void Add(Field field)
     {            
         this[field.Name] = field.GetStringValue();
-    }
-    private Object ByteArrayToObject(byte[] arrBytes)
-    {
-        MemoryStream memStream = new MemoryStream();
-        BinaryFormatter binForm = new BinaryFormatter();
-        memStream.Write(arrBytes, 0, arrBytes.Length);
-        memStream.Seek(0, SeekOrigin.Begin);
-        Object obj = binForm.Deserialize(memStream);
-
-        return obj;
-    }
-    private byte[] ToByteArray<T>(T obj)
-    {
-        if(obj == null)
-            return null;
-        BinaryFormatter bf = new BinaryFormatter();
-        using(MemoryStream ms = new MemoryStream())
-        {
-            bf.Serialize(ms, obj);
-            return ms.ToArray();
-        }
     }
 }

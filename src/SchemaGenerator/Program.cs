@@ -3,8 +3,6 @@ using Bielu.Examine.ElasticSearch.Configuration;
 using bielu.SchemaGenerator.Build.Configuration;
 using bielu.SchemaGenerator.Build.Services;
 using CommandLine;
-
-
 internal class Program
 {
     static readonly IList<Assembly> Assemblies = new List<Assembly>()
