@@ -1,13 +1,17 @@
 ﻿using System.Reflection;
 using Bielu.Examine.ElasticSearch.Configuration;
+using BIelu.Examine.Umbraco.Configuration;
 using bielu.SchemaGenerator.Build.Configuration;
 using bielu.SchemaGenerator.Build.Services;
 using CommandLine;
-internal class Program
+
+namespace bielu.Umbraco.Cdn.SchemageGerator;
+
+internal sealed class Program
 {
-    static readonly IList<Assembly> Assemblies = new List<Assembly>()
+    static readonly IList<Assembly> _assemblies = new List<Assembly>()
     {
-        typeof(ExamineElasticOptions).Assembly,
+        typeof(BieluExamineElasticOptions).Assembly,
         typeof(UmbracoExamineElasticOptions).Assembly
     };
 
@@ -28,11 +32,11 @@ internal class Program
     private static async Task Execute(Options options)
     {
         Console.WriteLine("Schema generator v {0}", typeof(SchemaGeneratorService).Assembly.GetName().Version.ToString());
-      
-            
-            var schemaGenerator = new SchemaGeneratorService(new SchemaGenerator(), options);
-            schemaGenerator.GenerateSchema(Assemblies);
-   
+
+
+        var schemaGenerator = new SchemaGeneratorService(new SchemaGenerator.Build.Services.SchemaGenerator(), options);
+        schemaGenerator.GenerateSchema(_assemblies);
+
         Console.WriteLine("Schema generator v {0}", typeof(SchemaGeneratorService).Assembly.GetName().Version.ToString());
 
     }

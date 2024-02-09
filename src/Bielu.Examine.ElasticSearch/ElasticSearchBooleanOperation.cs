@@ -12,7 +12,7 @@ public class ElasticSearchBooleanOperation : LuceneBooleanOperationBase
         internal ElasticSearchBooleanOperation(ElasticSearchQuery search)
             : base(search)
         {
-           
+
             _search = search;
         }
 
@@ -37,10 +37,10 @@ public class ElasticSearchBooleanOperation : LuceneBooleanOperationBase
         public override IQuery Not() => new ElasticQuery(this._search, Occur.MUST_NOT);
 
         #endregion
-        
+
         #region IOrdering
 
-        public override ISearchResults Execute(QueryOptions options = null)
+        public override ISearchResults Execute(QueryOptions? options = null)
         {
          return   _search.Execute(options);
         }
@@ -48,7 +48,7 @@ public class ElasticSearchBooleanOperation : LuceneBooleanOperationBase
         public override IOrdering OrderBy(params SortableField[] fields) => _search.OrderBy(fields);
 
         public override IOrdering OrderByDescending(params SortableField[] fields) => _search.OrderByDescending(fields);
-        
+
         #endregion
         #region Select Fields
 
@@ -67,14 +67,14 @@ public class ElasticSearchBooleanOperation : LuceneBooleanOperationBase
             BooleanOperation outerOp,
             BooleanOperation? defaultInnerOp = null)
         {
-            this._search.Queries.Push(new BooleanQuery());
+            this._search.____RULE_VIOLATION____Queries____RULE_VIOLATION____.Push(new BooleanQuery());
             BooleanOperation booleanOperation1 = this._search.BooleanOperation;
             if (defaultInnerOp.HasValue)
                 this._search.BooleanOperation = defaultInnerOp.Value;
             INestedBooleanOperation booleanOperation2 = inner((INestedQuery) this._search);
             if (defaultInnerOp.HasValue)
                 this._search.BooleanOperation = booleanOperation1;
-            return this._search.LuceneQuery((Query) this._search.Queries.Pop(), new BooleanOperation?(outerOp));
+            return this._search.LuceneQuery((Query) this._search.____RULE_VIOLATION____Queries____RULE_VIOLATION____.Pop(), new BooleanOperation?(outerOp));
         }
-      
+
     }

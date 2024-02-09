@@ -16,40 +16,31 @@ using IndexOptions = Examine.IndexOptions;
 
 namespace Bielu.Examine.ElasticSearch.Indexers;
 
-public class ElasticSearchBaseIndex(string name, ILoggerFactory loggerFactory, IElasticSearchClientFactory factory,IOptionsMonitor<IndexOptions> indexOptions, IOptionsMonitor<ExamineElasticOptions> examineElasticOptions) : BaseIndexProvider(loggerFactory, name, indexOptions), IDisposable
+public class ElasticSearchBaseIndex(string? name, ILoggerFactory loggerFactory, IElasticSearchClientFactory factory, IOptionsMonitor<IndexOptions> indexOptions, IOptionsMonitor<BieluExamineElasticOptions> examineElasticOptions) : BaseIndexProvider(loggerFactory, name, indexOptions),IElasticSearchExamineIndex, IDisposable
 {
     private bool? _exists;
-    private bool isReindexing = false;
-    private static readonly object ExistsLocker = new object();
-    private ElasticsearchClient _client
-    {
-        get
-        {
-            return factory.GetOrCreateClient(name);
-        }
-    }
+    private bool _isReindexing;
+    private static readonly object _existsLocker = new object();
+    public string? ElasticUrl { get; set; }
+    public  string? ElasticId => examineElasticOptions.CurrentValue.IndexConfigurations.FirstOrDefault(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase))?.AuthenticationDetails.Id;
+    public ElasticsearchClient Client => factory.GetOrCreateClient(name);
 
     /// <summary>
     /// Occurs when [document writing].
     /// </summary>
     public event EventHandler<Events.DocumentWritingEventArgs> DocumentWriting;
 
-    public string indexName { get; set; }
-    private IndexConfiguration? _indexConfiguration { get; set; } = examineElasticOptions.CurrentValue.IndexConfigurations.FirstOrDefault(x => x.Name == name.ToLowerInvariant()) ?? new IndexConfiguration() {
+    public string? IndexName { get; set; }
+    private IndexConfiguration? IndexConfiguration => examineElasticOptions.CurrentValue.IndexConfigurations.FirstOrDefault(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) ?? new IndexConfiguration()
+    {
         Name = name.ToLowerInvariant()
     };
-    private string _prefix
-    {
-        get
-        {
-            return _indexConfiguration.Prefix;
-        }
-    }
+    private string Prefix => IndexConfiguration.Prefix;
 
 
-    public string indexAlias { get; set; }
-    private string tempindexAlias { get; set; }
-    public string Analyzer { get; }
+    public string? IndexAlias { get; set; }
+    private string? TempindexAlias { get; set; }
+    public string? Analyzer { get; }
 
 
     protected virtual void FromExamineType(PropertiesDescriptor<ElasticDocument> descriptor, FieldDefinition field)
@@ -90,9 +81,9 @@ public class ElasticSearchBaseIndex(string name, ILoggerFactory loggerFactory, I
         DocumentWriting?.Invoke(this, docArgs);
     }
 
-    private static string FromLuceneAnalyzer(string analyzer)
+    private static string FromLuceneAnalyzer(string? analyzer)
     {
-        if (string.IsNullOrEmpty(analyzer) || !analyzer.Contains(","))
+        if (string.IsNullOrEmpty(analyzer) || !analyzer.Contains(','))
             return "simple";
 
         //if it contains a comma, we'll assume it's an assembly typed name
@@ -146,21 +137,21 @@ public class ElasticSearchBaseIndex(string name, ILoggerFactory loggerFactory, I
 
         var indexExists = IndexExists();
         if (indexExists && !forceOverwrite) return;
-        if (TempIndexExists() && !isReindexing) return;
+        if (TempIndexExists() && !_isReindexing) return;
         CreateNewIndex(indexExists);
     }
 
     private void CreateNewIndex(bool indexExists)
     {
-        lock (ExistsLocker)
+        lock (_existsLocker)
         {
-            _client.Indices.Delete((Indices)GetIndexAssignedToTempAlias().ToArray());
-            var index = _client.Indices.Create(indexName, c => c
+            Client.Indices.Delete((Indices)GetIndexAssignedToTempAlias().ToArray());
+            var index = Client.Indices.Create(IndexName, c => c
                 .Mappings(ms => ms.Dynamic(DynamicMapping.Runtime)
-                    .Properties(descriptor => descriptor.Date())
+                    .Properties<ElasticDocument>(descriptor => CreateFieldsMapping(descriptor,FieldDefinitions ))
                 )
             );
-            var aliasExists = _client.Indices.Exists(indexAlias).Exists;
+            var aliasExists = Client.Indices.Exists(IndexAlias).Exists;
 
 
             var indexesMappedToAlias = aliasExists
@@ -168,26 +159,44 @@ public class ElasticSearchBaseIndex(string name, ILoggerFactory loggerFactory, I
                 : new List<String>();
             if (!indexExists || (aliasExists && indexesMappedToAlias?.Count == 0))
             {
-                var bulkAliasResponse =  _client.Indices.UpdateAliases(x=>x.Actions(a=>a.Add(add=>add.Index(indexName).Alias(indexAlias))));
+                var bulkAliasResponse = Client.Indices.UpdateAliases(x => x.Actions(a => a.Add(add => add.Index(IndexName).Alias(IndexAlias))));
             }
             else
             {
-                isReindexing = true;
-                var bulkAliasResponse =  _client.Indices.UpdateAliases(x=>x.Actions(a=>a.Add(add=>add.Index(indexName).Alias(tempindexAlias))));
+                _isReindexing = true;
+                var bulkAliasResponse = Client.Indices.UpdateAliases(x => x.Actions(a => a.Add(add => add.Index(IndexName).Alias(TempindexAlias))));
             }
 
             _exists = true;
         }
     }
+    public virtual PropertiesDescriptor<ElasticDocument> CreateFieldsMapping(PropertiesDescriptor<ElasticDocument> descriptor,
+        ReadOnlyFieldDefinitionCollection fieldDefinitionCollection)
+    {
 
+        descriptor.Keyword(s => "Id");
+        descriptor.Keyword(s => FormatFieldName(ExamineFieldNames.ItemIdFieldName));
+        descriptor.Keyword(s => FormatFieldName(ExamineFieldNames.ItemTypeFieldName));
+        descriptor.Keyword(s => FormatFieldName(ExamineFieldNames.CategoryFieldName));
+
+        foreach (FieldDefinition field in fieldDefinitionCollection)
+        {
+            FromExamineType(descriptor, field);
+        }
+
+       // var docArgs = new MappingOperationEventArgs(descriptor);
+        //onMapping(docArgs);
+
+        return descriptor;
+    }
     private ElasticsearchExamineSearcher CreateSearcher()
     {
-        return new ElasticsearchExamineSearcher(Name, indexName, LoggerFactory, _examineElasticOptions);
+        return new ElasticsearchExamineSearcher(Name, IndexName, LoggerFactory, factory, examineElasticOptions);
     }
 
     private ElasticsearchClient GetIndexClient()
     {
-        return _factory.GetOrCreateClient(indexName);
+        return factory.GetOrCreateClient(IndexName);
     }
 
     public static string FormatFieldName(string fieldName)
@@ -195,7 +204,7 @@ public class ElasticSearchBaseIndex(string name, ILoggerFactory loggerFactory, I
         return $"{fieldName.Replace(".", "_")}";
     }
 
-    private BulkRequestDescriptor ToElasticSearchDocs(IEnumerable<ValueSet> docs, string indexTarget)
+    private BulkRequestDescriptor ToElasticSearchDocs(IEnumerable<ValueSet> docs, string? indexTarget)
     {
         var descriptor = new BulkRequestDescriptor();
 
@@ -210,7 +219,8 @@ public class ElasticSearchBaseIndex(string name, ILoggerFactory loggerFactory, I
                 if (!indexingNodeDataArgs.Cancel)
                 {
                     //this is just a dictionary
-                    var ad = new ElasticDocument {
+                    var ad = new ElasticDocument
+                    {
                         ["Id"] = d.Id,
                         [FormatFieldName(ExamineFieldNames.ItemIdFieldName)] = d.Id,
                         [FormatFieldName(ExamineFieldNames.ItemTypeFieldName)] = d.ItemType,
@@ -237,37 +247,37 @@ public class ElasticSearchBaseIndex(string name, ILoggerFactory loggerFactory, I
     }
     private IList<string> GetIndexAssignedToAlias()
     {
-        return _client.GetIndexesAssignedToAlias(indexAlias);
+        return Client.GetIndexesAssignedToAlias(IndexAlias);
     }
     private IList<string> GetIndexAssignedToTempAlias()
     {
-        return _client.GetIndexesAssignedToAlias(tempindexAlias);
+        return Client.GetIndexesAssignedToAlias(TempindexAlias);
     }
-    protected override void PerformIndexItems(IEnumerable<ValueSet> op, Action<IndexOperationEventArgs> onComplete)
+    protected override void PerformIndexItems(IEnumerable<ValueSet> values, Action<IndexOperationEventArgs> onComplete)
     {
-        var aliasExists = _client.IndexExists(indexAlias);
+        var aliasExists = Client.IndexExists(IndexAlias);
         var indexesMappedToAlias = aliasExists
             ? GetIndexAssignedToAlias()
             : new List<String>();
         EnsureIndex(false);
 
-        var indexTarget = isReindexing ? tempindexAlias : indexAlias;
+        var indexTarget = _isReindexing ? TempindexAlias : IndexAlias;
         var indexer = GetIndexClient();
         var totalResults = 0;
-        var batch = ToElasticSearchDocs(op, indexTarget);
+        var batch = ToElasticSearchDocs(values, indexTarget);
         var indexResult = indexer.Bulk(batch);
         totalResults += indexResult.Items.Count;
 
 
-        if (isReindexing)
+        if (_isReindexing)
         {
             indexer.Indices.UpdateAliases(ba => ba
-                .Actions(remove => remove.Remove(removeAction => removeAction.Alias(indexAlias))
-                    .Add(add => add.Index(indexName).Alias(indexAlias))));
+                .Actions(remove => remove.Remove(removeAction => removeAction.Alias(IndexAlias))
+                    .Add(add => add.Index(IndexName).Alias(IndexAlias))));
 
 
-            indexesMappedToAlias.Where(e => e != indexName).ToList()
-                .ForEach(e => _client.Indices.Delete(new DeleteIndexRequest(e)));
+            indexesMappedToAlias.Where(e => e != IndexName).ToList()
+                .ForEach(e => Client.Indices.Delete(new DeleteIndexRequest(e)));
         }
 
 
@@ -277,7 +287,7 @@ public class ElasticSearchBaseIndex(string name, ILoggerFactory loggerFactory, I
     protected override void PerformDeleteFromIndex(IEnumerable<string> itemIds,
         Action<IndexOperationEventArgs> onComplete)
     {
-     
+
     }
 
 
@@ -288,32 +298,30 @@ public class ElasticSearchBaseIndex(string name, ILoggerFactory loggerFactory, I
 
     public override bool IndexExists()
     {
-        return _client.Indices.Exists(indexAlias).Exists;
+        return Client.Indices.Exists(IndexAlias).Exists;
     }
 
-    public override ISearcher Searcher => _searcher.Value;
+    public override ISearcher Searcher => Searcher;
 
     public bool TempIndexExists()
     {
-        return _client.Indices.Exists(tempindexAlias).Exists;
+        return Client.Indices.Exists(TempindexAlias).Exists;
     }
 
-    public void Dispose()
-    {
-    }
-
-
-    public IEnumerable<string> GetFields()
-    {
-        return _searcher.Value.AllFields;
-    }
+    public IEnumerable<string> GetFields() => ((ElasticsearchExamineSearcher)Searcher).AllFields;
 
     #region IIndexDiagnostics
 
     public int DocumentCount =>
-        (int)(IndexExists() ? _client.Value.Count<ElasticDocument>(e => e.Indices(indexAlias)).Count : 0);
+        (int)(IndexExists() ? Client.Count<ElasticDocument>(e => e.Indices(IndexAlias)).Count : 0);
 
-    public int FieldCount => IndexExists() ? _searcher.Value.AllFields.Length : 0;
+    public int FieldCount => IndexExists() ?  GetFields().Count() : 0;
 
     #endregion
+ #pragma warning disable CA1816
+    public void Dispose()
+ #pragma warning restore CA1816
+    {
+
+    }
 }

@@ -1,6 +1,8 @@
-﻿namespace Bielu.Examine.ElasticSearch.Constants;
+﻿using Bielu.Examine.Core.Constants;
 
-public class BieluExamineConstants
+namespace Bielu.Examine.ElasticSearch.Constants;
+
+public class BieluExamineElasticConstants
 {
-    public const string SectionPrefix = "Examine:ElasticSearch";
+    public const string SectionPrefix = $"{BieluExamineConstants.SectionPrefix}:ElasticSearch";
 }

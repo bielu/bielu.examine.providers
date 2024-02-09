@@ -4,7 +4,7 @@ namespace Bielu.Examine.ElasticSearch.Helpers;
 
 public static class ElasticSearchHelper
 {
-    public static bool IndexExists(this ElasticsearchClient client,string indexName)
+    public static bool IndexExists(this ElasticsearchClient client,string? indexName)
     {
         var aliasExists = client.Indices.Exists(indexName).Exists;
         if (aliasExists)
@@ -18,7 +18,7 @@ public static class ElasticSearchHelper
 
         return false;
     }
-    public static IList<string> GetIndexesAssignedToAlias(this ElasticsearchClient client, string aliasName)
+    public static IList<string> GetIndexesAssignedToAlias(this ElasticsearchClient client, string? aliasName)
     {
         var aliasExists = client.Indices.Exists(aliasName).Exists;
         if (aliasExists)

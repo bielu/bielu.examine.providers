@@ -1,10 +1,11 @@
-﻿using Bielu.Examine.ElasticSearch.Constants;
+﻿using Bielu.Examine.Core.Constants;
+using Bielu.Examine.ElasticSearch.Constants;
 using bielu.SchemaGenerator.Core.Attributes;
 using Newtonsoft.Json;
 
 namespace Bielu.Examine.ElasticSearch.Configuration;
 [SchemaGeneration]
-public class ExamineElasticOptions
+public class BieluExamineElasticOptions
 {
     public bool DevMode { get; set; }
     [SchemaPrefix]

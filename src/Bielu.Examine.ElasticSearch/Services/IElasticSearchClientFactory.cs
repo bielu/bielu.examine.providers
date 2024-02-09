@@ -7,31 +7,31 @@ namespace Bielu.Examine.ElasticSearch.Services;
 
 public interface IElasticSearchClientFactory
 {
-    ElasticsearchClient GetOrCreateClient(string indexName);
+    ElasticsearchClient GetOrCreateClient(string? indexName);
 }
 
 public class ElasticSearchClientFactory : IElasticSearchClientFactory
 {
-    private ExamineElasticOptions _examineElasticOptions;
-    Dictionary<string, ElasticsearchClient> _clients = new Dictionary<string, ElasticsearchClient>();
+    private BieluExamineElasticOptions _bieluExamineElasticOptions;
+    Dictionary<string?, ElasticsearchClient> _clients = new Dictionary<string?, ElasticsearchClient>();
 
-    public ElasticSearchClientFactory(IOptionsMonitor<ExamineElasticOptions> examineElasticOptions)
+    public ElasticSearchClientFactory(IOptionsMonitor<BieluExamineElasticOptions> examineElasticOptions)
     {
-        _examineElasticOptions = examineElasticOptions.CurrentValue;
-        examineElasticOptions.OnChange(x => { _examineElasticOptions = x; });
+        _bieluExamineElasticOptions = examineElasticOptions.CurrentValue;
+        examineElasticOptions.OnChange(x => { _bieluExamineElasticOptions = x; });
     }
 
-    public ElasticsearchClient GetOrCreateClient(string indexName)
+    public ElasticsearchClient GetOrCreateClient(string? indexName)
     {
-        if (_clients.ContainsKey(indexName))
+        if (_clients.TryGetValue(indexName, out var value))
         {
-            return _clients[indexName];
+            return value;
         }
 
-        var indexConfiguration = _examineElasticOptions.IndexConfigurations.FirstOrDefault(x => x.Name == indexName);
+        var indexConfiguration = _bieluExamineElasticOptions.IndexConfigurations.FirstOrDefault(x => x.Name == indexName);
         if (indexConfiguration == null)
         {
-            throw new Exception($"Index configuration for {indexName} not found");
+            throw new InvalidOperationException($"Index configuration for {indexName} not found");
         }
 
         var client = indexConfiguration.AuthenticationType switch
@@ -42,7 +42,7 @@ public class ElasticSearchClientFactory : IElasticSearchClientFactory
                     indexConfiguration.AuthenticationDetails.Password)),
             AuthenticationType.CloudApi => new ElasticsearchClient(indexConfiguration.AuthenticationDetails.Id,
                 new ApiKey(indexConfiguration.AuthenticationDetails.ApiKey)),
-            _ => throw new Exception("Invalid authentication type")
+            _ => throw new InvalidOperationException("Invalid authentication type")
         };
 
         _clients.Add(indexName, client);

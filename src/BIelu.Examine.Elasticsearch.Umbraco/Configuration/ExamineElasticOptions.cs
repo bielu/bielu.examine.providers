@@ -1,8 +1,8 @@
-﻿using Bielu.Examine.ElasticSearch.Constants;
+﻿using Bielu.Examine.Core.Constants;
 using bielu.SchemaGenerator.Core.Attributes;
 using Newtonsoft.Json;
 
-namespace Bielu.Examine.ElasticSearch.Configuration;
+namespace BIelu.Examine.Umbraco.Configuration;
 [SchemaGeneration]
 public class UmbracoExamineElasticOptions
 {

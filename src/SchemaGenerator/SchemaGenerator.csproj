@@ -22,7 +22,7 @@
     <ItemGroup>
       <ProjectReference Include="..\Bielu.Examine.Core\Bielu.Examine.Core.csproj" />
       <ProjectReference Include="..\Bielu.Examine.ElasticSearch\Bielu.Examine.ElasticSearch.csproj" />
-      <ProjectReference Include="..\BIelu.Examine.Umbraco\BIelu.Examine.Umbraco.csproj" />
+      <ProjectReference Include="..\BIelu.Examine.Elasticsearch.Umbraco\BIelu.Examine.Elasticsearch.Umbraco.csproj" />
     </ItemGroup>
 
 </Project>

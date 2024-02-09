@@ -5,26 +5,26 @@ using Bielu.Examine.ElasticSearch.Services;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Clients.Elasticsearch.Mapping;
 using Examine;
-using Examine.Lucene.Providers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Logging;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Infrastructure.Examine;
-using Umbraco.Cms.Infrastructure.Runtime;
+using Umbraco.Extensions;
 using IndexOptions = Examine.IndexOptions;
 
 namespace BIelu.Examine.Umbraco.Indexers
 {
-    public class ElasticSearchUmbracoIndex(string name, ILoggerFactory loggerFactory, IElasticSearchClientFactory factory, IRuntime runtime, IOptionsMonitor<IndexOptions> indexOptions, IOptionsMonitor<ExamineElasticOptions> examineElasticOptions) : ElasticSearchBaseIndex(name, loggerFactory, factory, indexOptions, examineElasticOptions), IUmbracoIndex, IIndexDiagnostics
+    public class ElasticSearchUmbracoIndex(string? name, ILoggerFactory loggerFactory, IElasticSearchClientFactory factory, IRuntime runtime, ILogger<ElasticSearchUmbracoIndex> logger, IOptionsMonitor<IndexOptions> indexOptions, IOptionsMonitor<BieluExamineElasticOptions> examineElasticOptions) : ElasticSearchBaseIndex(name, loggerFactory, factory, indexOptions, examineElasticOptions), IUmbracoIndex, IIndexDiagnostics
     {
+        public const string SpecialFieldPrefix = "__";
         public const string IndexPathFieldName = SpecialFieldPrefix + "Path";
         public const string NodeKeyFieldName = SpecialFieldPrefix + "Key";
         public const string IconFieldName = SpecialFieldPrefix + "Icon";
         public const string PublishedFieldName = SpecialFieldPrefix + "Published";
 
-        public List<string> KeywordFields = new List<string>()
+        private readonly List<string> _keywordFields = new List<string>()
         {
             IndexPathFieldName
         };
@@ -40,9 +40,7 @@ namespace BIelu.Examine.Umbraco.Indexers
         public long GetDocumentCount() => throw new NotImplementedException();
         public IEnumerable<string> GetFieldNames() => throw new NotImplementedException();
         public bool SupportProtectedContent { get; }
-        public Attempt<string?> IsHealthy() => throw new NotImplementedException();
-        public IReadOnlyDictionary<string, object?> Metadata { get; }
-         private readonly bool _configBased = false;
+        private readonly bool _configBased;
 
         protected IProfilingLogger ProfilingLogger { get; }
 
@@ -51,13 +49,6 @@ namespace BIelu.Examine.Umbraco.Indexers
         /// </summary>
 
         public bool PublishedValuesOnly { get; internal set; }
-        /// <inheritdoc />
-        public new IEnumerable<string> GetFields()
-        {
-            //we know this is a LuceneSearcher
-            var searcher = (LuceneSearcher) GetSearcher();
-            return searcher.GetAllIndexedFields();
-        }
 
         /// <summary>
         /// override to check if we can actually initialize.
@@ -79,56 +70,61 @@ namespace BIelu.Examine.Umbraco.Indexers
         /// <summary>
         /// overridden for logging
         /// </summary>
-        /// <param name="ex"></param>
-        protected override void OnIndexingError(IndexingErrorEventArgs ex)
+        /// <param name="e"></param>
+        protected override void OnIndexingError(IndexingErrorEventArgs e)
         {
-            ProfilingLogger.Error(GetType(), ex.InnerException, ex.Message);
-            base.OnIndexingError(ex);
+ #pragma warning disable CA1848
+            logger.LogError(e.Exception, "Error indexing item {NodeId}", e.ItemId);
+ #pragma warning restore CA1848
+            base.OnIndexingError(e);
         }
         public override PropertiesDescriptor<ElasticDocument> CreateFieldsMapping(PropertiesDescriptor<ElasticDocument> descriptor,
-            FieldDefinitionCollection fieldDefinitionCollection)
+            ReadOnlyFieldDefinitionCollection fieldDefinitionCollection)
         {
             descriptor.Keyword(s => FormatFieldName("Id"));
-            descriptor.Keyword(s => FormatFieldName(LuceneIndex.ItemIdFieldName));
-            descriptor.Keyword(s => FormatFieldName(LuceneIndex.ItemTypeFieldName));
-            descriptor.Keyword(s => FormatFieldName(LuceneIndex.CategoryFieldName));
+            descriptor.Keyword(s => FormatFieldName(ExamineFieldNames.ItemIdFieldName));
+            descriptor.Keyword(s => FormatFieldName(ExamineFieldNames.ItemTypeFieldName));
+            descriptor.Keyword(s => FormatFieldName(ExamineFieldNames.CategoryFieldName));
             foreach (FieldDefinition field in fieldDefinitionCollection)
             {
                 FromExamineType(descriptor, field);
             }
 
-            var docArgs = new MappingOperationEventArgs(descriptor);
-            onMapping(docArgs);
+            //  var docArgs = new MappingOperationEventArgs(descriptor);
+            // onMapping(docArgs);
 
             return descriptor;
         }
         protected override void FromExamineType(PropertiesDescriptor<ElasticDocument> descriptor, FieldDefinition field)
         {
 
-            if (KeywordFields.Contains(field.Name))
+            if (_keywordFields.Contains(field.Name))
             {
                 descriptor.Keyword(s => FormatFieldName(field.Name));
-             return;   
+                return;
             }
-            base.FromExamineType(descriptor,field);
+            base.FromExamineType(descriptor, field);
         }
         protected override void PerformDeleteFromIndex(IEnumerable<string> itemIds,
             Action<IndexOperationEventArgs> onComplete)
         {
-            var descriptor = new BulkDescriptor();
 
+            var descriptor = new BulkRequestDescriptor();
+            descriptor = descriptor;
             foreach (var id in itemIds.Where(x => !string.IsNullOrWhiteSpace(x)))
-                descriptor.Index(indexName).Delete<Document>(x => x
-                        .Id(id))
-                    .Refresh(Refresh.WaitFor);
+            {
+                descriptor.Delete(x => x.Index(IndexName).Id(id));
+            }
 
-            var response = _client.Value.Bulk(descriptor);
+            var response = factory.GetOrCreateClient(IndexName).Bulk(descriptor);
             if (response.Errors)
             {
                 foreach (var itemWithError in response.ItemsWithErrors)
                 {
-                    _logger.Error<ElasticSearchBaseIndex>("Failed to remove from index document {NodeID}: {Error}",
+ #pragma warning disable CA1848
+                    logger.LogError("Failed to remove from index document {NodeID}: {Error}",
                         itemWithError.Id, itemWithError.Error);
+ #pragma warning restore CA1848
                 }
             }
         }
@@ -136,40 +132,47 @@ namespace BIelu.Examine.Umbraco.Indexers
 
         protected override void OnTransformingIndexValues(IndexingItemEventArgs e)
         {
+            base.OnTransformingIndexValues(e);
+
+            var updatedValues = e.ValueSet.Values.ToDictionary(x => x.Key, x => (IEnumerable<object>)x.Value);
+
             //ensure special __Path field
             var path = e.ValueSet.GetValue("path");
             if (path != null)
             {
-                e.ValueSet.Set(IndexPathFieldName, path);
+                updatedValues[UmbracoExamineFieldNames.IndexPathFieldName] = path.Yield();
             }
 
             //icon
-            if (e.ValueSet.Values.TryGetValue("icon", out var icon) &&
-                e.ValueSet.Values.ContainsKey(IconFieldName) == false)
+            if (e.ValueSet.Values.TryGetValue("icon", out IReadOnlyList<object>? icon) &&
+                e.ValueSet.Values.ContainsKey(UmbracoExamineFieldNames.IconFieldName) == false)
             {
-                e.ValueSet.Values[IconFieldName] = icon;
+                updatedValues[UmbracoExamineFieldNames.IconFieldName] = icon;
             }
-            base.OnTransformingIndexValues(e);
+
+            e.SetValues(updatedValues);
         }
 
 
         public Attempt<string> IsHealthy()
         {
-            var isHealthy = _client.Value.Ping();
-            return isHealthy.ApiCall.Success ? Attempt<string>.Succeed():  Attempt.Fail(isHealthy.OriginalException.Message);
+            var isHealthy = factory.GetOrCreateClient(IndexName).Cluster.Health();
+            return isHealthy.Status ==  HealthStatus.Green ||  isHealthy.Status ==  HealthStatus.Yellow
+                ? Attempt<string>.Succeed()
+                : Attempt.Fail("ElasticSearch cluster is not healthy");
         }
 
-        public IReadOnlyDictionary<string, object> Metadata
+        public IReadOnlyDictionary<string, object?> Metadata
         {
             get
             {
-                var d = new Dictionary<string, object>();
+                var d = new Dictionary<string, object?>();
                 d[nameof(DocumentCount)] = DocumentCount;
                 d[nameof(Name)] = Name;
-                d[nameof(indexAlias)] = indexAlias;
-                d[nameof(indexName)] = indexName;
-                d[nameof(ElasticURL)] = ElasticURL;
-                d[nameof(ElasticID)] = ElasticID;
+                d[nameof(IndexAlias)] = IndexAlias;
+                d[nameof(IndexName)] = IndexName;
+                d[nameof(ElasticUrl)] = ElasticUrl;
+                d[nameof(ElasticId)] = ElasticId;
                 d[nameof(Analyzer)] = Analyzer;
                 d[nameof(EnableDefaultEventHandler)] = EnableDefaultEventHandler;
                 d[nameof(PublishedValuesOnly)] = PublishedValuesOnly;
@@ -189,11 +192,9 @@ namespace BIelu.Examine.Umbraco.Indexers
                     d[nameof(ContentValueSetValidator.ParentId)] = cvsv.ParentId;
                 }
 
-                d[nameof(FieldDefinitionCollection)] = String.Join(", ",_searcher.Value.AllFields);
+                d[nameof(FieldDefinitionCollection)] = String.Join(", ", Searcher);
                 return d.Where(x => x.Value != null).ToDictionary(x => x.Key, x => x.Value);
             }
         }
     }
-    }
-    
 }
