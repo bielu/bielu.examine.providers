@@ -41,7 +41,13 @@ public class ElasticsearchExamineSearcher(string name, string? indexName, ILogge
     private bool? _exists;
     private string _indexName;
 
-    public string? IndexAlias { get; set; }
+    public string? IndexAlias
+    {
+        get
+        {
+            return name;
+        }
+    }
 
     public string Prefix
     {

@@ -6,6 +6,6 @@ public class IndexConfiguration
     public string Analyzer { get; set; }
     public string ConnectionString { get; set; }
     public AuthenticationType AuthenticationType { get; set; }
-    public AuthenticationDetails AuthenticationDetails { get; set; }
+    public AuthenticationDetails? AuthenticationDetails { get; set; }
     public string Prefix { get; set; }
 }

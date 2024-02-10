@@ -2,5 +2,5 @@
 
 public class BieluExamineConstants
 {
-    public const string SectionPrefix = "Examine:ElasticSearch";
+    public const string SectionPrefix = "bielu:Examine:ElasticSearch";
 }

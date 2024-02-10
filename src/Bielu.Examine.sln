@@ -8,6 +8,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BIelu.Examine.Elasticsearch
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SchemaGenerator", "SchemaGenerator\SchemaGenerator.csproj", "{88B82586-1590-4B51-A437-A7C71E21863D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "bielu.Examine.UmbracoInstance", "bielu.Examine.UmbracoInstance\bielu.Examine.UmbracoInstance.csproj", "{D499496B-12AE-4823-8BC4-B575568FA5A5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{88B82586-1590-4B51-A437-A7C71E21863D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{88B82586-1590-4B51-A437-A7C71E21863D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{88B82586-1590-4B51-A437-A7C71E21863D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D499496B-12AE-4823-8BC4-B575568FA5A5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D499496B-12AE-4823-8BC4-B575568FA5A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D499496B-12AE-4823-8BC4-B575568FA5A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D499496B-12AE-4823-8BC4-B575568FA5A5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

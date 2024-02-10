@@ -37,8 +37,8 @@ namespace BIelu.Examine.Umbraco.Indexers
         public const string RawFieldPrefix = SpecialFieldPrefix + "Raw_";
 
 
-        public long GetDocumentCount() => throw new NotImplementedException();
-        public IEnumerable<string> GetFieldNames() => throw new NotImplementedException();
+        public long GetDocumentCount() => 0;
+        public IEnumerable<string> GetFieldNames() => GetFields();
         public bool SupportProtectedContent { get; }
         private readonly bool _configBased;
 

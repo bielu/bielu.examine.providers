@@ -22,7 +22,7 @@ public class ElasticSearchBaseIndex(string? name, ILoggerFactory loggerFactory, 
     private bool _isReindexing;
     private static readonly object _existsLocker = new object();
     public string? ElasticUrl { get; set; }
-    public  string? ElasticId => examineElasticOptions.CurrentValue.IndexConfigurations.FirstOrDefault(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase))?.AuthenticationDetails.Id;
+    public  string? ElasticId => examineElasticOptions.CurrentValue.IndexConfigurations.FirstOrDefault(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase))?.AuthenticationDetails?.Id;
     public ElasticsearchClient Client => factory.GetOrCreateClient(name);
 
     /// <summary>
@@ -30,7 +30,7 @@ public class ElasticSearchBaseIndex(string? name, ILoggerFactory loggerFactory, 
     /// </summary>
     public event EventHandler<Events.DocumentWritingEventArgs> DocumentWriting;
 
-    public string? IndexName { get; set; }
+    public string? IndexName { get { return name; } }
     private IndexConfiguration? IndexConfiguration => examineElasticOptions.CurrentValue.IndexConfigurations.FirstOrDefault(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) ?? new IndexConfiguration()
     {
         Name = name.ToLowerInvariant()
@@ -38,8 +38,8 @@ public class ElasticSearchBaseIndex(string? name, ILoggerFactory loggerFactory, 
     private string Prefix => IndexConfiguration.Prefix;
 
 
-    public string? IndexAlias { get; set; }
-    private string? TempindexAlias { get; set; }
+    public string? IndexAlias { get { return name; } }
+    private string? TempindexAlias { get { return name+"Temp"; } }
     public string? Analyzer { get; }
 
 
@@ -301,7 +301,7 @@ public class ElasticSearchBaseIndex(string? name, ILoggerFactory loggerFactory, 
         return Client.Indices.Exists(IndexAlias).Exists;
     }
 
-    public override ISearcher Searcher => Searcher;
+    public override ISearcher Searcher => CreateSearcher();
 
     public bool TempIndexExists()
     {
