@@ -1,15 +1,14 @@
-﻿using Bielu.Examine.ElasticSearch.Configuration;
+﻿using Bielu.Examine.Elasticsearch2.Configuration;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Transport;
 using Microsoft.Extensions.Options;
 
-namespace Bielu.Examine.ElasticSearch.Services;
+namespace Bielu.Examine.Elasticsearch2.Services;
 
 public interface IElasticSearchClientFactory
 {
     ElasticsearchClient GetOrCreateClient(string? indexName);
 }
-
 public class ElasticSearchClientFactory : IElasticSearchClientFactory
 {
     private BieluExamineElasticOptions _bieluExamineElasticOptions;
@@ -33,18 +32,21 @@ public class ElasticSearchClientFactory : IElasticSearchClientFactory
         {
             throw new InvalidOperationException($"Index configuration for {indexName} not found");
         }
-
-        var client = indexConfiguration.AuthenticationType switch
+        var connectionSettings = indexConfiguration.AuthenticationType switch
         {
-            AuthenticationType.None => new ElasticsearchClient(new Uri(indexConfiguration.ConnectionString)),
-            AuthenticationType.Cloud => new ElasticsearchClient(indexConfiguration.AuthenticationDetails.Id,
-                new BasicAuthentication(indexConfiguration.AuthenticationDetails.Username,
-                    indexConfiguration.AuthenticationDetails.Password)),
-            AuthenticationType.CloudApi => new ElasticsearchClient(indexConfiguration.AuthenticationDetails.Id,
-                new ApiKey(indexConfiguration.AuthenticationDetails.ApiKey)),
+            AuthenticationType.None => new ElasticsearchClientSettings(new Uri(indexConfiguration.ConnectionString)),
+            AuthenticationType.Cloud => new ElasticsearchClientSettings(indexConfiguration.AuthenticationDetails?.Id,
+                new BasicAuthentication(indexConfiguration.AuthenticationDetails?.Username,
+                    indexConfiguration.AuthenticationDetails?.Password)),
+            AuthenticationType.CloudApi => new ElasticsearchClientSettings(indexConfiguration.AuthenticationDetails?.Id,
+                new ApiKey(indexConfiguration.AuthenticationDetails?.ApiKey)),
             _ => throw new InvalidOperationException("Invalid authentication type")
         };
-
+        if (_bieluExamineElasticOptions.DevMode)
+        {
+            connectionSettings.EnableDebugMode();
+        }
+        var client = new ElasticsearchClient(connectionSettings);
         _clients.Add(indexName, client);
         return client;
     }

@@ -1,7 +1,8 @@
-﻿using Bielu.Examine.ElasticSearch.Configuration;
-using Bielu.Examine.ElasticSearch.Indexers;
-using Bielu.Examine.ElasticSearch.Model;
-using Bielu.Examine.ElasticSearch.Services;
+﻿using Bielu.Examine.Core.Services;
+using Bielu.Examine.Elasticsearch2.Configuration;
+using Bielu.Examine.Elasticsearch2.Indexers;
+using Bielu.Examine.Elasticsearch2.Model;
+using Bielu.Examine.Elasticsearch2.Services;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Clients.Elasticsearch.Mapping;
 using Examine;
@@ -16,7 +17,7 @@ using IndexOptions = Examine.IndexOptions;
 
 namespace BIelu.Examine.Umbraco.Indexers
 {
-    public class ElasticSearchUmbracoIndex(string? name, ILoggerFactory loggerFactory, IElasticSearchClientFactory factory, IRuntime runtime, ILogger<ElasticSearchUmbracoIndex> logger, IOptionsMonitor<IndexOptions> indexOptions, IOptionsMonitor<BieluExamineElasticOptions> examineElasticOptions) : ElasticSearchBaseIndex(name, loggerFactory, factory, indexOptions, examineElasticOptions), IUmbracoIndex, IIndexDiagnostics
+    public class ElasticSearchUmbracoIndex(string? name, ILoggerFactory loggerFactory, IElasticSearchClientFactory factory, IRuntime runtime,  ILogger<ElasticSearchUmbracoIndex> logger, IOptionsMonitor<IndexOptions> indexOptions, IOptionsMonitor<BieluExamineElasticOptions> examineElasticOptions) : ElasticSearchBaseIndex(name, logger,loggerFactory, factory, indexOptions, examineElasticOptions), IUmbracoIndex, IIndexDiagnostics
     {
         public const string SpecialFieldPrefix = "__";
         public const string IndexPathFieldName = SpecialFieldPrefix + "Path";
@@ -30,7 +31,7 @@ namespace BIelu.Examine.Umbraco.Indexers
         };
         private readonly IProfilingLogger _logger;
         public bool EnableDefaultEventHandler { get; set; } = true;
-
+        public override string Name => name;
         /// <summary>
         /// The prefix added to a field when it is duplicated in order to store the original raw value.
         /// </summary>
@@ -81,10 +82,10 @@ namespace BIelu.Examine.Umbraco.Indexers
         public override PropertiesDescriptor<ElasticDocument> CreateFieldsMapping(PropertiesDescriptor<ElasticDocument> descriptor,
             ReadOnlyFieldDefinitionCollection fieldDefinitionCollection)
         {
-            descriptor.Keyword(s => FormatFieldName("Id"));
-            descriptor.Keyword(s => FormatFieldName(ExamineFieldNames.ItemIdFieldName));
-            descriptor.Keyword(s => FormatFieldName(ExamineFieldNames.ItemTypeFieldName));
-            descriptor.Keyword(s => FormatFieldName(ExamineFieldNames.CategoryFieldName));
+            descriptor.Keyword( FormatFieldName("Id"));
+            descriptor.Keyword(FormatFieldName(ExamineFieldNames.ItemIdFieldName));
+            descriptor.Keyword(FormatFieldName(ExamineFieldNames.ItemTypeFieldName));
+            descriptor.Keyword(FormatFieldName(ExamineFieldNames.CategoryFieldName));
             foreach (FieldDefinition field in fieldDefinitionCollection)
             {
                 FromExamineType(descriptor, field);
@@ -170,7 +171,7 @@ namespace BIelu.Examine.Umbraco.Indexers
                 d[nameof(DocumentCount)] = DocumentCount;
                 d[nameof(Name)] = Name;
                 d[nameof(IndexAlias)] = IndexAlias;
-                d[nameof(IndexName)] = IndexName;
+                d[nameof(IndexName)] = CurrentIndexName;
                 d[nameof(ElasticUrl)] = ElasticUrl;
                 d[nameof(ElasticId)] = ElasticId;
                 d[nameof(Analyzer)] = Analyzer;

@@ -1,4 +1,5 @@
-﻿using Examine.Lucene.Search;
+﻿using Bielu.Examine.Elasticsearch2;
+using Examine.Lucene.Search;
 using Examine.Search;
 using Lucene.Net.Search;
 

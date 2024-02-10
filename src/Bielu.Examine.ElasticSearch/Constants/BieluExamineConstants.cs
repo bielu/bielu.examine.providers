@@ -1,6 +1,6 @@
 ﻿using Bielu.Examine.Core.Constants;
 
-namespace Bielu.Examine.ElasticSearch.Constants;
+namespace Bielu.Examine.Elasticsearch2.Constants;
 
 public class BieluExamineElasticConstants
 {

@@ -1,4 +1,4 @@
-﻿namespace Bielu.Examine.ElasticSearch.Extensions;
+﻿namespace Bielu.Examine.Elasticsearch2.Extensions;
 
 public class DepedencyInjectionExtension
 {

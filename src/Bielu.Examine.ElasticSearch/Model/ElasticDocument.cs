@@ -4,7 +4,7 @@ using Lucene.Net.Documents;
 using Lucene.Net.Index;
 using System.Text;
 
-namespace Bielu.Examine.ElasticSearch.Model;
+namespace Bielu.Examine.Elasticsearch2.Model;
 
 public class ElasticDocument : Dictionary<string, object>
 {

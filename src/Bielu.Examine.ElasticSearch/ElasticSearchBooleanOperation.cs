@@ -4,7 +4,7 @@ using Examine.Lucene.Search;
 using Examine.Search;
 using Lucene.Net.Search;
 
-namespace Bielu.Examine.ElasticSearch;
+namespace Bielu.Examine.Elasticsearch2;
 
 public class ElasticSearchBooleanOperation : LuceneBooleanOperationBase
     {

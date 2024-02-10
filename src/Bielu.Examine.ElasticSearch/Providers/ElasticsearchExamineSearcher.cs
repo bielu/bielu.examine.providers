@@ -1,10 +1,10 @@
 ﻿using System.Globalization;
-using Bielu.Examine.ElasticSearch.Configuration;
-using Bielu.Examine.ElasticSearch.Extensions;
-using Bielu.Examine.ElasticSearch.Helpers;
-using Bielu.Examine.ElasticSearch.Model;
 using Bielu.Examine.ElasticSearch.Queries;
-using Bielu.Examine.ElasticSearch.Services;
+using Bielu.Examine.Elasticsearch2.Extensions;
+using Bielu.Examine.Elasticsearch2.Helpers;
+using Bielu.Examine.Elasticsearch2.Configuration;
+using Bielu.Examine.Elasticsearch2.Model;
+using Bielu.Examine.Elasticsearch2.Services;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Clients.Elasticsearch.Aggregations;
 using Elastic.Clients.Elasticsearch.IndexManagement;
@@ -23,7 +23,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Query = Elastic.Clients.Elasticsearch.QueryDsl.Query;
 
-namespace Bielu.Examine.ElasticSearch.Providers;
+namespace Bielu.Examine.Elasticsearch2.Providers;
 
 public class ElasticsearchExamineSearcher(string name, string? indexName, ILoggerFactory loggerFactory, IElasticSearchClientFactory clientFactory,
     IOptionsMonitor<BieluExamineElasticOptions> connectionConfiguration) : BaseSearchProvider(name), IDisposable

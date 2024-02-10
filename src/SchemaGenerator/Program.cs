@@ -1,5 +1,5 @@
 ﻿using System.Reflection;
-using Bielu.Examine.ElasticSearch.Configuration;
+using Bielu.Examine.Elasticsearch2.Configuration;
 using BIelu.Examine.Umbraco.Configuration;
 using bielu.SchemaGenerator.Build.Configuration;
 using bielu.SchemaGenerator.Build.Services;

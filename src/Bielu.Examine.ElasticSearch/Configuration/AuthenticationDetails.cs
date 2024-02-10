@@ -1,4 +1,4 @@
-namespace Bielu.Examine.ElasticSearch.Configuration;
+namespace Bielu.Examine.Elasticsearch2.Configuration;
 
 public class AuthenticationDetails
 {

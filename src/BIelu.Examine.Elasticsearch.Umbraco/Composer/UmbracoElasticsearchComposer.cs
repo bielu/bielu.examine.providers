@@ -7,7 +7,6 @@ namespace BIelu.Examine.Umbraco.Composer;
 
 public class UmbracoElasticsearchComposer: IComposer
 {
-
     public void Compose(IUmbracoBuilder builder)
     {
         builder.Services.AddCoreServices();

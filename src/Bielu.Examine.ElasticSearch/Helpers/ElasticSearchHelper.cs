@@ -1,6 +1,6 @@
 ﻿using Elastic.Clients.Elasticsearch;
 
-namespace Bielu.Examine.ElasticSearch.Helpers;
+namespace Bielu.Examine.Elasticsearch2.Helpers;
 
 public static class ElasticSearchHelper
 {

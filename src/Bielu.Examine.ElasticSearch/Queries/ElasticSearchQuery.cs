@@ -1,5 +1,6 @@
 ﻿using System.Collections;
-using Bielu.Examine.ElasticSearch.Providers;
+using Bielu.Examine.Elasticsearch2;
+using Bielu.Examine.Elasticsearch2.Providers;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Clients.Elasticsearch.Analysis;
 using Elastic.Clients.Elasticsearch.Mapping;

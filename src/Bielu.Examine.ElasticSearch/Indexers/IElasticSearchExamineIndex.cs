@@ -1,6 +1,6 @@
 ﻿using Examine;
 
-namespace Bielu.Examine.ElasticSearch.Indexers;
+namespace Bielu.Examine.Elasticsearch2.Indexers;
 
 public interface IElasticSearchExamineIndex : IIndex
 {
