@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel;
-using Bielu.Examine.Elasticsearch2.Model;
+using Bielu.Examine.Elasticsearch.Model;
 using Examine;
 
-namespace Bielu.Examine.Elasticsearch2.Events;
+namespace Bielu.Examine.Elasticsearch.Events;
 
 public class DocumentWritingEventArgs : CancelEventArgs
 {

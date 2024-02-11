@@ -1,9 +1,8 @@
 ﻿using Bielu.Examine.Core.Constants;
-using Bielu.Examine.Elasticsearch2.Constants;
 using bielu.SchemaGenerator.Core.Attributes;
 using Newtonsoft.Json;
 
-namespace Bielu.Examine.Elasticsearch2.Configuration;
+namespace Bielu.Examine.Elasticsearch.Configuration;
 [SchemaGeneration]
 public class BieluExamineElasticOptions
 {

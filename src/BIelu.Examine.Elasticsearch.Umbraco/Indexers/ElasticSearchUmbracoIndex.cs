@@ -1,8 +1,8 @@
 ﻿using Bielu.Examine.Core.Services;
-using Bielu.Examine.Elasticsearch2.Configuration;
-using Bielu.Examine.Elasticsearch2.Indexers;
-using Bielu.Examine.Elasticsearch2.Model;
-using Bielu.Examine.Elasticsearch2.Services;
+using Bielu.Examine.Elasticsearch.Configuration;
+using Bielu.Examine.Elasticsearch.Indexers;
+using Bielu.Examine.Elasticsearch.Model;
+using Bielu.Examine.Elasticsearch.Services;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Clients.Elasticsearch.Mapping;
 using Examine;
@@ -171,6 +171,7 @@ namespace BIelu.Examine.Umbraco.Indexers
                 d[nameof(DocumentCount)] = DocumentCount;
                 d[nameof(Name)] = Name;
                 d[nameof(IndexAlias)] = IndexAlias;
+                d[nameof(FieldCount)] =  GetFields().Count();
                 d[nameof(IndexName)] = CurrentIndexName;
                 d[nameof(ElasticUrl)] = ElasticUrl;
                 d[nameof(ElasticId)] = ElasticId;

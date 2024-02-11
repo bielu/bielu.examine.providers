@@ -1,9 +1,11 @@
-﻿using System.Collections;
-using Bielu.Examine.Elasticsearch2;
-using Bielu.Examine.Elasticsearch2.Providers;
+﻿using System.Text.RegularExpressions;
+using Bielu.Examine.Elasticsearch.Extensions;
+using Bielu.Examine.Elasticsearch.Model;
+using Bielu.Examine.Elasticsearch.Providers;
 using Elastic.Clients.Elasticsearch;
-using Elastic.Clients.Elasticsearch.Analysis;
 using Elastic.Clients.Elasticsearch.Mapping;
+using Elastic.Clients.Elasticsearch.QueryDsl;
+using Elastic.Transport.Extensions;
 using Examine;
 using Examine.Lucene.Indexing;
 using Examine.Lucene.Search;
@@ -14,13 +16,21 @@ using Lucene.Net.QueryParsers.Classic;
 using Lucene.Net.Search;
 using Lucene.Net.Util;
 using Microsoft.Extensions.Logging;
+using FuzzyQuery = Lucene.Net.Search.FuzzyQuery;
 using KeywordAnalyzer = Lucene.Net.Analysis.Core.KeywordAnalyzer;
 using PatternAnalyzer = Lucene.Net.Analysis.Miscellaneous.PatternAnalyzer;
+using Query = Lucene.Net.Search.Query;
+using WildcardQuery = Lucene.Net.Search.WildcardQuery;
 
-namespace Bielu.Examine.ElasticSearch.Queries;
+namespace Bielu.Examine.Elasticsearch.Queries;
 
-public class ElasticSearchQuery(CustomMultiFieldQueryParser queryParser, ElasticsearchExamineSearcher searcher, ILoggerFactory loggerFactory,
-    string category, LuceneSearchOptions searchOptions, BooleanOperation occurance) : LuceneSearchQueryBase(queryParser, category, searchOptions, occurance), IQueryExecutor, IQuery
+public partial class ElasticSearchQuery(
+    CustomMultiFieldQueryParser queryParser,
+    ElasticsearchExamineSearcher searcher,
+    ILoggerFactory loggerFactory,
+    string category,
+    LuceneSearchOptions searchOptions,
+    BooleanOperation occurance) : LuceneSearchQueryBase(queryParser, category, searchOptions, occurance), IQueryExecutor, IQuery
 {
 
 
@@ -29,14 +39,110 @@ public class ElasticSearchQuery(CustomMultiFieldQueryParser queryParser, Elastic
     private static readonly LuceneSearchOptions _emptyOptions = new LuceneSearchOptions();
     private readonly LuceneVersion _luceneVersion = LuceneVersion.LUCENE_48;
 
-
+    private BoolQuery? _queryContainer;
+    private SearchRequest<Document>? _searchRequest;
+    private Func<SearchRequestDescriptor<ElasticDocument>, SearchRequest<Document>>? _searchSelector;
+    private Action<SortOptionsDescriptor<ElasticDocument>> _sortDescriptor;
     public ISearchResults Execute(QueryOptions? options)
     {
-      //  searcher.Client.Search();
-      //  return new ElasticSearchSearchResults();
-      return null;
+        //  searcher.Client.Search();
+        //  return new ElasticSearchSearchResults();
+        return DoSearch(options).ConvertToSearchResults();;
     }
+    private SearchResponse<ElasticDocument> DoSearch(QueryOptions? options)
+    {
+        SearchResponse<ElasticDocument> searchResult;
 
+        if (Query != null)
+        {
+            var extractTermsSupported = CheckQueryForExtractTerms(Query);
+
+            if (extractTermsSupported)
+            {
+                //This try catch is because analyzers strip out stop words and sometimes leave the query
+                //with null values. This simply tries to extract terms, if it fails with a null
+                //reference then its an invalid null query, NotSupporteException occurs when the query is
+                //valid but the type of query can't extract terms.
+                //This IS a work-around, theoretically Lucene itself should check for null query parameters
+                //before throwing exceptions.
+                try
+                {
+                    var set = new HashSet<Term>();
+                    Query.ExtractTerms(set);
+                }
+                catch (NullReferenceException)
+                {
+                    //this means that an analyzer has stipped out stop words and now there are
+                    //no words left to search on
+
+                    //it could also mean that potentially a IIndexFieldValueType is throwing a null ref
+                    return null;
+                }
+                catch (NotSupportedException)
+                {
+                    //swallow this exception, we should continue if this occurs.
+                }
+            }
+            var queryDescriptor = new QueryDescriptor();
+
+            _queryContainer = new BoolQuery()
+            {
+                Must = new List<Elastic.Clients.Elasticsearch.QueryDsl.Query>()
+                {
+                    new QueryStringQuery()
+                    {
+                        Query =MyRegex().Replace(Query.ToString(), "$1\\-"), AnalyzeWildcard = true
+
+                    }
+                }
+            };
+        }
+        if (_queryContainer != null)
+        {
+            SearchRequestDescriptor<ElasticDocument> searchDescriptor = new  SearchRequestDescriptor<ElasticDocument>();
+            searchDescriptor.Index(searcher.IndexAlias)
+                .Size(options.Take)
+                .From(options.Skip)
+                .Query( _queryContainer)
+                .Sort(_sortDescriptor);
+
+            var json = searcher.Client.RequestResponseSerializer.SerializeToString(searchDescriptor);
+            searchResult = searcher.Client.Search<ElasticDocument>(searchDescriptor);
+        }
+        else if (_searchRequest != null)
+        {
+            searchResult = searcher.Client.Search<ElasticDocument>(_searchRequest);
+        }
+        else
+        {
+            searchResult = searcher.Client.Search<ElasticDocument>(_searchSelector.Invoke(new SearchRequestDescriptor<ElasticDocument>()));
+        }
+
+
+        return searchResult;
+    }
+    private static bool CheckQueryForExtractTerms(Query query)
+    {
+        if (query is TermRangeQuery || query is WildcardQuery || query is FuzzyQuery)
+        {
+            return false; //ExtractTerms() not supported by TermRangeQuery, WildcardQuery,FuzzyQuery and will throw NotSupportedException
+        }
+
+        if (query is BooleanQuery bq)
+        {
+            foreach (BooleanClause clause in bq.Clauses)
+            {
+                //recurse
+                var check = CheckQueryForExtractTerms(clause.Query);
+                if (!check)
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
     protected override LuceneBooleanOperationBase CreateOp()
     {
         return new ElasticSearchBooleanOperation(this);
@@ -515,4 +621,7 @@ public class ElasticSearchQuery(CustomMultiFieldQueryParser queryParser, Elastic
     {
         throw new NotImplementedException();
     }
+
+    [GeneratedRegex(@"([:,])-")]
+    private static partial Regex MyRegex();
 }

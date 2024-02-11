@@ -1,5 +1,5 @@
-﻿using Bielu.Examine.Elasticsearch2.Configuration;
-using Bielu.Examine.Elasticsearch2.Services;
+﻿using Bielu.Examine.Elasticsearch.Configuration;
+using Bielu.Examine.Elasticsearch.Services;
 using Examine;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;

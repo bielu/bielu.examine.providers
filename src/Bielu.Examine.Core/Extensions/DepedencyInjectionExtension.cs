@@ -1,7 +1,7 @@
 ﻿using Bielu.Examine.Core.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Bielu.Examine.ElasticSearch.Extensions;
+namespace Bielu.Examine.Core.Extensions;
 
 public static class DepedencyInjectionExtension
 {

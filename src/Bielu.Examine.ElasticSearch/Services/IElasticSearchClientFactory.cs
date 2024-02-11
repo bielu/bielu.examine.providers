@@ -1,9 +1,9 @@
-﻿using Bielu.Examine.Elasticsearch2.Configuration;
+﻿using Bielu.Examine.Elasticsearch.Configuration;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Transport;
 using Microsoft.Extensions.Options;
 
-namespace Bielu.Examine.Elasticsearch2.Services;
+namespace Bielu.Examine.Elasticsearch.Services;
 
 public interface IElasticSearchClientFactory
 {

@@ -1,4 +1,4 @@
-﻿using Bielu.Examine.ElasticSearch.Extensions;
+﻿using Bielu.Examine.Core.Extensions;
 using BIelu.Examine.Umbraco.DependencyInjection;
 using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.DependencyInjection;

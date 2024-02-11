@@ -1,10 +1,8 @@
 ﻿using System.Globalization;
-using System.Runtime.Serialization.Formatters.Binary;
 using Lucene.Net.Documents;
 using Lucene.Net.Index;
-using System.Text;
 
-namespace Bielu.Examine.Elasticsearch2.Model;
+namespace Bielu.Examine.Elasticsearch.Model;
 
 public class ElasticDocument : Dictionary<string, object>
 {

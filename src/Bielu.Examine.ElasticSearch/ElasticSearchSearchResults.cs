@@ -1,12 +1,8 @@
-﻿using System.Collections;
-using Elastic.Clients.Elasticsearch;
-using Elastic.Clients.Elasticsearch.Aggregations;
+﻿using Elastic.Clients.Elasticsearch.Aggregations;
 using Examine;
 using Examine.Lucene.Search;
-using Examine.Search;
-using Lucene.Net.Search;
 
-namespace Bielu.Examine.Elasticsearch2;
+namespace Bielu.Examine.Elasticsearch;
 
 public class ElasticSearchSearchResults : LuceneSearchResults
 {

@@ -1,21 +1,18 @@
-﻿using System.Configuration;
-using System.Globalization;
-using Bielu.Examine.Elasticsearch2.Helpers;
-using Bielu.Examine.Elasticsearch2.Configuration;
-using Bielu.Examine.Elasticsearch2.Model;
-using Bielu.Examine.Elasticsearch2.Providers;
-using Bielu.Examine.Elasticsearch2.Services;
+﻿using System.Globalization;
+using Bielu.Examine.Elasticsearch.Configuration;
+using Bielu.Examine.Elasticsearch.Helpers;
+using Bielu.Examine.Elasticsearch.Model;
+using Bielu.Examine.Elasticsearch.Providers;
+using Bielu.Examine.Elasticsearch.Services;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Clients.Elasticsearch.IndexManagement;
 using Elastic.Clients.Elasticsearch.Mapping;
 using Examine;
-using Examine.Lucene;
-using Examine.Lucene.Providers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using IndexOptions = Examine.IndexOptions;
 
-namespace Bielu.Examine.Elasticsearch2.Indexers;
+namespace Bielu.Examine.Elasticsearch.Indexers;
 
 public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex> logger, ILoggerFactory loggerFactory, IElasticSearchClientFactory factory, IOptionsMonitor<IndexOptions> indexOptions, IOptionsMonitor<BieluExamineElasticOptions> examineElasticOptions) : BaseIndexProvider(loggerFactory, name, indexOptions),IElasticSearchExamineIndex, IDisposable
 {
@@ -217,9 +214,6 @@ public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex
         {
             FromExamineType(descriptor, field);
         }
-
-       // var docArgs = new MappingOperationEventArgs(descriptor);
-        //onMapping(docArgs);
 
         return descriptor;
     }

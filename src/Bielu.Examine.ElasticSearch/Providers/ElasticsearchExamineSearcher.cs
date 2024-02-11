@@ -1,29 +1,26 @@
-﻿using System.Globalization;
-using Bielu.Examine.ElasticSearch.Queries;
-using Bielu.Examine.Elasticsearch2.Extensions;
-using Bielu.Examine.Elasticsearch2.Helpers;
-using Bielu.Examine.Elasticsearch2.Configuration;
-using Bielu.Examine.Elasticsearch2.Model;
-using Bielu.Examine.Elasticsearch2.Services;
+﻿using Bielu.Examine.Elasticsearch.Configuration;
+using Bielu.Examine.Elasticsearch.Extensions;
+using Bielu.Examine.Elasticsearch.Helpers;
+using Bielu.Examine.Elasticsearch.Model;
+using Bielu.Examine.Elasticsearch.Queries;
+using Bielu.Examine.Elasticsearch.Services;
 using Elastic.Clients.Elasticsearch;
-using Elastic.Clients.Elasticsearch.Aggregations;
 using Elastic.Clients.Elasticsearch.IndexManagement;
-using Elastic.Clients.Elasticsearch.Ingest;
 using Elastic.Clients.Elasticsearch.Mapping;
 using Elastic.Clients.Elasticsearch.QueryDsl;
 using Elastic.Transport.Extensions;
 using Examine;
 using Examine.Lucene.Search;
 using Examine.Search;
-using Lucene.Net.Analysis.Miscellaneous;
 using Lucene.Net.Analysis.Standard;
 using Lucene.Net.Search;
 using Lucene.Net.Util;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using ElasticSearchQuery = Bielu.Examine.Elasticsearch.Queries.ElasticSearchQuery;
 using Query = Elastic.Clients.Elasticsearch.QueryDsl.Query;
 
-namespace Bielu.Examine.Elasticsearch2.Providers;
+namespace Bielu.Examine.Elasticsearch.Providers;
 
 public class ElasticsearchExamineSearcher(string name, string? indexName, ILoggerFactory loggerFactory, IElasticSearchClientFactory clientFactory,
     IOptionsMonitor<BieluExamineElasticOptions> connectionConfiguration) : BaseSearchProvider(name), IDisposable
@@ -45,7 +42,7 @@ public class ElasticsearchExamineSearcher(string name, string? indexName, ILogge
     {
         get
         {
-            return name;
+            return name.ToLowerInvariant();
         }
     }
 
@@ -57,11 +54,15 @@ public class ElasticsearchExamineSearcher(string name, string? indexName, ILogge
         }
     }
 
-    private static readonly string[] _emptyFields = Array.Empty<string>();
+    private static readonly string[]? _emptyFields = Array.Empty<string>();
     public bool IndexExists
     {
         get
         {
+            if(_exists.HasValue)
+            {
+                return (bool)_exists;
+            }
             _exists = Client.IndexExists(IndexAlias);
             return (bool)_exists;
         }
@@ -88,11 +89,14 @@ public class ElasticsearchExamineSearcher(string name, string? indexName, ILogge
             if (!IndexExists) return null;
             if (_fieldsMapping != null) return _fieldsMapping;
 
+
             var indexesMappedToAlias = Client.GetIndexesAssignedToAlias(IndexAlias).ToList();
+            if(indexesMappedToAlias.Count <= 0)
+            {
+                return null;
+            }
             GetMappingResponse response =
-                Client.Indices.GetMapping(new GetMappingRequest
-                {
-                });
+                Client.Indices.GetMapping( mapping=>mapping.Indices(indexesMappedToAlias[0]));
             _fieldsMapping = response.GetMappingFor(indexesMappedToAlias[0]).Properties;
             return _fieldsMapping;
         }
@@ -126,28 +130,24 @@ public class ElasticsearchExamineSearcher(string name, string? indexName, ILogge
         var json = Client.RequestResponseSerializer.SerializeToString(searchDescriptor);
         SearchResponse<ElasticDocument>
             searchResult = Client.Search<ElasticDocument>(searchDescriptor.Explain());
-
-
-        return ConvertToSearchResults(searchResult);
+        return searchResult.ConvertToSearchResults();
     }
 
-    private static ElasticSearchSearchResults ConvertToSearchResults(SearchResponse<ElasticDocument> searchResult)
+
+    private string[]? _parsedValues;
+    private string[]? ParsedProperties
     {
-        //todo: figure out
-        var results = searchResult.Hits.Select(x =>
-            new SearchResult(x.Id, (float)x.Score.Value, () => new Dictionary<string, List<string>>())).ToList();
-        var totalItemCount = searchResult.Total;
-        var maxscore = searchResult.MaxScore;
-        var afterOptions = new SearchAfterOptions(Convert.ToInt32(searchResult.Hits.Last().Id,CultureInfo.InvariantCulture),
-            (float)searchResult.Hits.Last().Score.Value, null, 0);
-        return new ElasticSearchSearchResults(results, totalItemCount, maxscore, afterOptions,
-            searchResult.Aggregations);
+        get
+        {
+            if (_parsedValues != null) return _parsedValues;
+            _parsedValues = AllProperties?.Select(x => x.Key.Name)?.ToArray() ?? _emptyFields;
+            return _parsedValues;
+        }
     }
-
     public override IQuery CreateQuery(string category = null,
         BooleanOperation defaultOperation = BooleanOperation.And)
     {
-        return new ElasticSearchQuery(new ElasticSearchQueryParser(LuceneVersion.LUCENE_CURRENT,_fieldsMapping.GetFields().ToArray(),new StandardAnalyzer(LuceneVersion.LUCENE_48)), this,loggerFactory, category, new LuceneSearchOptions(), defaultOperation );
+        return new ElasticSearchQuery(new ElasticSearchQueryParser(LuceneVersion.LUCENE_CURRENT,ParsedProperties,new StandardAnalyzer(LuceneVersion.LUCENE_48)), this,loggerFactory, category, new LuceneSearchOptions(), defaultOperation );
     }
  #pragma warning disable CA1816
     public void Dispose() => loggerFactory.Dispose();

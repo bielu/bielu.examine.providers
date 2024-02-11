@@ -1,4 +1,4 @@
-namespace Bielu.Examine.Elasticsearch2.Configuration;
+namespace Bielu.Examine.Elasticsearch.Configuration;
 
 public enum AuthenticationType
 {

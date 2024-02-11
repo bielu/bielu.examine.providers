@@ -1,7 +1,8 @@
 ﻿using Bielu.Examine.Core.Services;
-using Bielu.Examine.Elasticsearch2.Configuration;
-using Bielu.Examine.Elasticsearch2.Indexers;
-using Bielu.Examine.Elasticsearch2.Services;
+using Bielu.Examine.Elasticsearch.Configuration;
+using Bielu.Examine.Elasticsearch.Indexers;
+using Bielu.Examine.Elasticsearch.Queries;
+using Bielu.Examine.Elasticsearch.Services;
 using BIelu.Examine.Umbraco.Indexers;
 using Examine;
 using Examine.Lucene;

@@ -6,7 +6,7 @@ using Lucene.Net.Analysis.Miscellaneous;
 using Lucene.Net.Documents;
 using Microsoft.Extensions.Logging;
 
-namespace Bielu.Examine.Elasticsearch2.Services;
+namespace Bielu.Examine.Elasticsearch.Services;
 
 public class ElasticsearchQueryTranslationService(ILoggerFactory loggerFactory) : IQueryTranslationService<PropertyName, IProperty>
 {

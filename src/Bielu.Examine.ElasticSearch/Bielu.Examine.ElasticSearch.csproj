@@ -4,7 +4,7 @@
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <RootNamespace>Bielu.Examine.Elasticsearch2</RootNamespace>
+        <RootNamespace>Bielu.Examine.Elasticsearch</RootNamespace>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="bielu.SchemaGenerator.Core">
@@ -29,6 +29,18 @@
     </ItemGroup>
     <ItemGroup>
       <ProjectReference Include="..\Bielu.Examine.Core\Bielu.Examine.Core.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+      <Folder Include="Generated\" />
+    </ItemGroup>
+    <ItemGroup>
+      <Compile Remove="Generated\System.Text.RegularExpressions.Generator\**" />
+    </ItemGroup>
+    <ItemGroup>
+      <EmbeddedResource Remove="Generated\System.Text.RegularExpressions.Generator\**" />
+    </ItemGroup>
+    <ItemGroup>
+      <None Remove="Generated\System.Text.RegularExpressions.Generator\**" />
     </ItemGroup>
 
 </Project>

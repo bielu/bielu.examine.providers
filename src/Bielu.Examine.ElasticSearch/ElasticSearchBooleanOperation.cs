@@ -1,10 +1,11 @@
-﻿using Bielu.Examine.ElasticSearch.Queries;
+﻿using Bielu.Examine.Elasticsearch.Queries;
 using Examine;
 using Examine.Lucene.Search;
 using Examine.Search;
 using Lucene.Net.Search;
+using ElasticSearchQuery = Bielu.Examine.Elasticsearch.Queries.ElasticSearchQuery;
 
-namespace Bielu.Examine.Elasticsearch2;
+namespace Bielu.Examine.Elasticsearch;
 
 public class ElasticSearchBooleanOperation : LuceneBooleanOperationBase
     {

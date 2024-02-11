@@ -14,6 +14,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "bielu.Examine.Umbraco", "bi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "bielu.Examine.OpenSearch", "bielu.Examine.OpenSearch\bielu.Examine.OpenSearch.csproj", "{17D3775E-4FDB-466D-A5FC-7E636C9D3016}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionsFiles", "SolutionsFiles", "{AE8F8534-8D86-4107-9962-71C665CD3724}"
+	ProjectSection(SolutionItems) = preProject
+		..\.editorconfig = ..\.editorconfig
+		..\.gitignore = ..\.gitignore
+		..\version.props = ..\version.props
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
