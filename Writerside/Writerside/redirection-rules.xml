@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE rules SYSTEM "https://resources.jetbrains.com/writerside/1.0/redirection-rules.dtd">
+<rules>
+    <!-- format is as follows
+    <rule id="<unique id>">
+        <accepts>page.html</accepts>
+    </rule>
+    -->
+    <rule id="6ffc6d14">
+        <description>Created after removal of "Overview" from API Docs</description>
+        <accepts>Overview.html</accepts>
+    </rule>
+    <rule id="673d4d69">
+        <description>Created after removal of "Authentification" from API Docs</description>
+        <accepts>Authentification.html</accepts>
+    </rule>
+    <rule id="4078eb73">
+        <description>Created after removal of "API Quickstart" from API Docs</description>
+        <accepts>API-quickstart-XML.html</accepts>
+    </rule>
+    <rule id="20d17971">
+        <description>Created after removal of "API Overview" from API Docs</description>
+        <accepts>API-Overview.html</accepts>
+    </rule>
+    <rule id="8146e1e">
+        <description>Created after removal of "Changes" from API Docs</description>
+        <accepts>Changes-XML.html</accepts>
+    </rule>
+    <rule id="4d4b34b5">
+        <description>Created after removal of "Pet" from API Docs</description>
+        <accepts>Pet.html</accepts>
+    </rule>
+    <rule id="6743ae29">
+        <description>Created after removal of "Find pet inventories by status" from API Docs</description>
+        <accepts>Returns-pet-inventories-by-status.html</accepts>
+    </rule>
+    <rule id="73d30b90">
+        <description>Created after removal of "Place order for pet" from API Docs</description>
+        <accepts>Place-an-order-for-a-pet.html</accepts>
+    </rule>
+    <rule id="1960d826">
+        <description>Created after removal of "Find purchase order by ID" from API Docs</description>
+        <accepts>Find-purchase-order-by-ID.html</accepts>
+    </rule>
+    <rule id="439b68c0">
+        <description>Created after removal of "Delete purchase order by ID" from API Docs</description>
+        <accepts>Delete-purchase-order-by-ID.html</accepts>
+    </rule>
+    <rule id="55b2f542">
+        <description>Created after removal of "Create user" from API Docs</description>
+        <accepts>Create-user.html</accepts>
+    </rule>
+    <rule id="1ceffea9">
+        <description>Created after removal of "Create list of users with given input array" from API Docs</description>
+        <accepts>Creates-list-of-users-with-given-input-array.html</accepts>
+    </rule>
+    <rule id="7dd9660a">
+        <description>Created after removal of "Log user into the system" from API Docs</description>
+        <accepts>Logs-user-into-the-system.html</accepts>
+    </rule>
+    <rule id="60579a6b">
+        <description>Created after removal of "Log current user out" from API Docs</description>
+        <accepts>Logs-out-current-logged-in-user-session.html</accepts>
+    </rule>
+    <rule id="77c91c2b">
+        <description>Created after removal of "Find user" from API Docs</description>
+        <accepts>Get-user-by-user-name.html</accepts>
+    </rule>
+    <rule id="44e942bf">
+        <description>Created after removal of "Update user" from API Docs</description>
+        <accepts>Update-user.html</accepts>
+    </rule>
+    <rule id="66a7fb07">
+        <description>Created after removal of "Delete user" from API Docs</description>
+        <accepts>Delete-user.html</accepts>
+    </rule>
+    <rule id="30f63376">
+        <description>Created after removal of "API Quickstart" from API Docs</description>
+        <accepts>API-quickstart.html</accepts>
+    </rule>
+    <rule id="17150ac6">
+        <description>Created after removal of "API Reference" from API Docs</description>
+        <accepts>API-reference.html</accepts>
+    </rule>
+    <rule id="6f00dc53">
+        <description>Created after removal of "Changes" from API Docs</description>
+        <accepts>Changes.html</accepts>
+    </rule>
+</rules>
