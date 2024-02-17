@@ -263,7 +263,7 @@ public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex
 
                     var docArgs = new Events.DocumentWritingEventArgs(d, ad);
                     OnDocumentWriting(docArgs);
-                    descriptor.Index<ElasticDocument>(ad, indexingNodeDataArgs => indexingNodeDataArgs.Index(indexTarget));
+                    descriptor.Index<ElasticDocument>(ad, indexingNodeDataArgs => indexingNodeDataArgs.Index(indexTarget).Id(ad["Id"].ToString()));
                 }
             }
             catch (Exception e)

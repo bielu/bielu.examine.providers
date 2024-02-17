@@ -147,7 +147,7 @@ public class ElasticsearchExamineSearcher(string name, string? indexName, ILogge
     public override IQuery CreateQuery(string category = null,
         BooleanOperation defaultOperation = BooleanOperation.And)
     {
-        return new ElasticSearchQuery(new ElasticSearchQueryParser(LuceneVersion.LUCENE_CURRENT,ParsedProperties,new StandardAnalyzer(LuceneVersion.LUCENE_48)), this,loggerFactory, category, new LuceneSearchOptions(), defaultOperation );
+        return new ElasticSearchQuery(new ElasticSearchQueryParser(LuceneVersion.LUCENE_CURRENT,ParsedProperties,new StandardAnalyzer(LuceneVersion.LUCENE_48)), this,loggerFactory,loggerFactory.CreateLogger<ElasticSearchQuery>() ,category, new LuceneSearchOptions(), defaultOperation );
     }
  #pragma warning disable CA1816
     public void Dispose() => loggerFactory.Dispose();
