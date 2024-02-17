@@ -4,7 +4,7 @@
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <RootNamespace>BIelu.Examine.Umbraco</RootNamespace>
+        <RootNamespace>Bielu.Examine.Elasticsearch.Umbraco</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>

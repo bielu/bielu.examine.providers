@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 using Bielu.Examine.Elasticsearch.Configuration;
-using BIelu.Examine.Umbraco.Configuration;
+using Bielu.Examine.Elasticsearch.Umbraco.Configuration;
 using bielu.SchemaGenerator.Build.Configuration;
 using bielu.SchemaGenerator.Build.Services;
 using CommandLine;

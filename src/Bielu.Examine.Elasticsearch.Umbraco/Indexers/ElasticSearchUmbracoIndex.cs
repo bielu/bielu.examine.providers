@@ -1,5 +1,4 @@
-﻿using Bielu.Examine.Core.Services;
-using Bielu.Examine.Elasticsearch.Configuration;
+﻿using Bielu.Examine.Elasticsearch.Configuration;
 using Bielu.Examine.Elasticsearch.Indexers;
 using Bielu.Examine.Elasticsearch.Model;
 using Bielu.Examine.Elasticsearch.Services;
@@ -15,7 +14,7 @@ using Umbraco.Cms.Infrastructure.Examine;
 using Umbraco.Extensions;
 using IndexOptions = Examine.IndexOptions;
 
-namespace BIelu.Examine.Umbraco.Indexers
+namespace Bielu.Examine.Elasticsearch.Umbraco.Indexers
 {
     public class ElasticSearchUmbracoIndex(string? name, ILoggerFactory loggerFactory, IElasticSearchClientFactory factory, IRuntime runtime,  ILogger<ElasticSearchUmbracoIndex> logger, IOptionsMonitor<IndexOptions> indexOptions, IOptionsMonitor<BieluExamineElasticOptions> examineElasticOptions) : ElasticSearchBaseIndex(name, logger,loggerFactory, factory, indexOptions, examineElasticOptions), IUmbracoIndex, IIndexDiagnostics
     {

@@ -1,22 +1,17 @@
-﻿using Bielu.Examine.Core.Services;
-using Bielu.Examine.Elasticsearch.Configuration;
+﻿using Bielu.Examine.Elasticsearch.Configuration;
 using Bielu.Examine.Elasticsearch.Indexers;
 using Bielu.Examine.Elasticsearch.Queries;
 using Bielu.Examine.Elasticsearch.Services;
-using BIelu.Examine.Umbraco.Indexers;
+using Bielu.Examine.Elasticsearch.Umbraco.Indexers;
 using Examine;
-using Examine.Lucene;
-using Examine.Lucene.Directories;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.DependencyInjection;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Infrastructure.Examine;
-using Umbraco.Cms.Infrastructure.Examine.DependencyInjection;
 
-namespace BIelu.Examine.Umbraco.DependencyInjection;
+namespace Bielu.Examine.Elasticsearch.Umbraco.DependencyInjection;
 
 public static class UmbracoBuilderExtensions
 {
@@ -27,13 +22,13 @@ public static class UmbracoBuilderExtensions
         services.AddSingleton<IBackOfficeExamineSearcher, BackOfficeExamineSearcher>();
         services.AddSingleton<IIndexDiagnosticsFactory, LuceneIndexDiagnosticsFactory>();
         services.AddSingleton<IElasticSearchClientFactory, ElasticSearchClientFactory>();
-        services.AddExamineElasticSearchIndex<UmbracoContentElasticsearchIndex>(Constants.UmbracoIndexes
+        services.AddExamineElasticSearchIndex<UmbracoContentElasticsearchIndex>(global::Umbraco.Cms.Core.Constants.UmbracoIndexes
             .InternalIndexName);
-        services.AddExamineElasticSearchIndex<UmbracoContentElasticsearchIndex>(Constants.UmbracoIndexes
+        services.AddExamineElasticSearchIndex<UmbracoContentElasticsearchIndex>(global::Umbraco.Cms.Core.Constants.UmbracoIndexes
             .ExternalIndexName);
-        services.AddExamineElasticSearchIndex<UmbracoMemberElasticSearchIndex>(Constants.UmbracoIndexes
+        services.AddExamineElasticSearchIndex<UmbracoMemberElasticSearchIndex>(global::Umbraco.Cms.Core.Constants.UmbracoIndexes
             .MembersIndexName);
-        services.AddExamineElasticSearchIndex<UmbracoDeliveryApiContentElasticSearchIndex>(Constants.UmbracoIndexes
+        services.AddExamineElasticSearchIndex<UmbracoDeliveryApiContentElasticSearchIndex>(global::Umbraco.Cms.Core.Constants.UmbracoIndexes
             .DeliveryApiContentIndexName);
         services.AddSingleton<IExamineManager, ExamineManager<IElasticSearchExamineIndex>>();
         return umbracoBuilder;

@@ -2,7 +2,7 @@
 using bielu.SchemaGenerator.Core.Attributes;
 using Newtonsoft.Json;
 
-namespace BIelu.Examine.Umbraco.Configuration;
+namespace Bielu.Examine.Elasticsearch.Umbraco.Configuration;
 [SchemaGeneration]
 public class UmbracoExamineElasticOptions
 {

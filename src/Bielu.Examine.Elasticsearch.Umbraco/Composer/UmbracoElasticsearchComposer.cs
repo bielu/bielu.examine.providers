@@ -1,9 +1,9 @@
 ﻿using Bielu.Examine.Core.Extensions;
-using BIelu.Examine.Umbraco.DependencyInjection;
+using Bielu.Examine.Elasticsearch.Umbraco.DependencyInjection;
 using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.DependencyInjection;
 
-namespace BIelu.Examine.Umbraco.Composer;
+namespace Bielu.Examine.Elasticsearch.Umbraco.Composer;
 
 public class UmbracoElasticsearchComposer: IComposer
 {

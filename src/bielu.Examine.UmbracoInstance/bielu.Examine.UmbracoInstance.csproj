@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BIelu.Examine.Elasticsearch.Umbraco\BIelu.Examine.Elasticsearch.Umbraco.csproj" />
+    <ProjectReference Include="..\Bielu.Examine.Elasticsearch.Umbraco\Bielu.Examine.Elasticsearch.Umbraco.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
