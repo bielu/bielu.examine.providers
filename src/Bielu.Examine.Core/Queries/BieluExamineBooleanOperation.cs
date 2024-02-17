@@ -22,7 +22,7 @@ public abstract class BieluExamineBooleanOperation(BieluExamineBaseQuery search)
     #region Select Fields
 
 
-    public override IOrdering SelectFields(ISet<string> fieldNames) => search.SelectFieldsInternal(fieldNames);
+    public override IOrdering SelectFields(ISet<string>? fieldNames) => search.SelectFieldsInternal(fieldNames);
 
     public override IOrdering SelectField(string fieldName) => search.SelectFieldInternal(fieldName);
 

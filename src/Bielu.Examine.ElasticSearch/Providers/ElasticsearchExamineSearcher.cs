@@ -22,37 +22,29 @@ using Query = Elastic.Clients.Elasticsearch.QueryDsl.Query;
 
 namespace Bielu.Examine.Elasticsearch.Providers;
 
-public class ElasticsearchExamineSearcher(string name, string? indexName, ILoggerFactory loggerFactory, IElasticSearchClientFactory clientFactory,
+public class ElasticsearchExamineSearcher(string name, string? indexAlias, ILoggerFactory loggerFactory, IElasticSearchClientFactory clientFactory,
     IOptionsMonitor<BieluExamineElasticOptions> connectionConfiguration) : BaseSearchProvider(name), IDisposable
 {
+    private ElasticsearchClient? _client;
+    public string? IndexAlias => indexAlias;
+
     public ElasticsearchClient Client
     {
         get
         {
-            return clientFactory.GetOrCreateClient(indexName);
+            if (_client != null)
+            {
+                return _client;
+            }
+            _client = clientFactory.GetOrCreateClient(name);
+            return _client;
         }
     }
     private readonly List<SortField> _sortFields = new List<SortField>();
     private string?[] _allFields;
     private Properties _fieldsMapping;
     private bool? _exists;
-    private string _indexName;
 
-    public string? IndexAlias
-    {
-        get
-        {
-            return name.ToLowerInvariant();
-        }
-    }
-
-    public string Prefix
-    {
-        get
-        {
-            return connectionConfiguration.CurrentValue.IndexConfigurations.FirstOrDefault(x => x.Name == _indexName)?.Prefix ?? "";
-        }
-    }
 
     private static readonly string[]? _emptyFields = Array.Empty<string>();
     public bool IndexExists
@@ -63,7 +55,7 @@ public class ElasticsearchExamineSearcher(string name, string? indexName, ILogge
             {
                 return (bool)_exists;
             }
-            _exists = Client.IndexExists(IndexAlias);
+            _exists = Client.IndexExists(indexAlias);
             return (bool)_exists;
         }
     }
@@ -90,7 +82,7 @@ public class ElasticsearchExamineSearcher(string name, string? indexName, ILogge
             if (_fieldsMapping != null) return _fieldsMapping;
 
 
-            var indexesMappedToAlias = Client.GetIndexesAssignedToAlias(IndexAlias).ToList();
+            var indexesMappedToAlias = Client.GetIndexesAssignedToAlias(indexAlias).ToList();
             if(indexesMappedToAlias.Count <= 0)
             {
                 return null;
@@ -118,7 +110,7 @@ public class ElasticsearchExamineSearcher(string name, string? indexName, ILogge
         SortOptionsDescriptor<ElasticDocument>? optionsDescriptor = null)
     {
         SearchRequestDescriptor<ElasticDocument> searchDescriptor = new SearchRequestDescriptor<ElasticDocument>();
-        searchDescriptor.Index(_indexName)
+        searchDescriptor.Index(indexAlias)
             .Query(query);
         if (optionsDescriptor != null)
         {

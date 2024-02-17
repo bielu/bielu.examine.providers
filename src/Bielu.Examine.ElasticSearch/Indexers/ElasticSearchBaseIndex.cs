@@ -219,7 +219,7 @@ public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex
     }
     private ElasticsearchExamineSearcher CreateSearcher()
     {
-        return new ElasticsearchExamineSearcher(Name, IndexName, LoggerFactory, factory, examineElasticOptions);
+        return new ElasticsearchExamineSearcher(Name, IndexAlias, LoggerFactory, factory, examineElasticOptions);
     }
 
     private ElasticsearchClient GetIndexClient()

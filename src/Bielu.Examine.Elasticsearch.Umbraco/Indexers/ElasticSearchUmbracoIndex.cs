@@ -23,7 +23,6 @@ namespace Bielu.Examine.Elasticsearch.Umbraco.Indexers
         public const string NodeKeyFieldName = SpecialFieldPrefix + "Key";
         public const string IconFieldName = SpecialFieldPrefix + "Icon";
         public const string PublishedFieldName = SpecialFieldPrefix + "Published";
-
         private readonly List<string> _keywordFields = new List<string>()
         {
             IndexPathFieldName

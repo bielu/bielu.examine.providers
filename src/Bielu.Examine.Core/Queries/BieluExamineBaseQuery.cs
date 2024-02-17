@@ -21,6 +21,8 @@ public abstract partial class BieluExamineBaseQuery(
     BooleanOperation occurance) : LuceneSearchQueryBase(queryParser, category, searchOptions, occurance), IQuery
 {
     private readonly LuceneVersion _luceneVersion = LuceneVersion.LUCENE_48;
+
+    private ISet<string>? _fieldsToLoad;
     public List<SortField> SortFields { get; set; } = new List<SortField>();
     public abstract ISearchResults Execute(QueryOptions? options);
     public Query ExtractQuery()
@@ -481,19 +483,22 @@ public abstract partial class BieluExamineBaseQuery(
         ' '
     ];
 
-    public IOrdering SelectFieldsInternal(ISet<string> fieldNames)
+    internal IBooleanOperation SelectFieldsInternal(ISet<string>? loadedFieldNames)
     {
-        throw new NotImplementedException();
+        _fieldsToLoad = loadedFieldNames;
+        return CreateOp();
     }
 
-    public IOrdering SelectFieldInternal(string fieldName)
+    internal IBooleanOperation SelectFieldInternal(string fieldName)
     {
-        throw new NotImplementedException();
+        _fieldsToLoad = new HashSet<string>(new string[] { fieldName });
+        return CreateOp();
     }
 
-    public IOrdering SelectAllFieldsInternal()
+    public IBooleanOperation SelectAllFieldsInternal()
     {
-        throw new NotImplementedException();
+        _fieldsToLoad = null;
+        return CreateOp();
     }
 
 
