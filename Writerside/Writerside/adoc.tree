@@ -7,4 +7,5 @@
                  start-page="api-docs.md">
 
     <toc-element topic="api-docs.md"/>
+    <toc-element topic="Configuration.md" />
 </instance-profile>

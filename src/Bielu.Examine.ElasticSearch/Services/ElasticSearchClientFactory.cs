@@ -1,4 +1,5 @@
 ﻿using Bielu.Examine.Elasticsearch.Configuration;
+using Bielu.Examine.Elasticsearch.Constants;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Transport;
 using Microsoft.Extensions.Options;
@@ -24,9 +25,14 @@ public class ElasticSearchClientFactory : IElasticSearchClientFactory
         }
         var defaultConfiguration = _bieluExamineElasticOptions.DefaultIndexConfiguration;
         var indexConfiguration = _bieluExamineElasticOptions.IndexConfigurations.FirstOrDefault(x => x.Name == indexName);
-        if(indexConfiguration == null)
+        if (indexConfiguration == null)
         {
             indexConfiguration = defaultConfiguration;
+            indexName = BieluExamineElasticConstants.DefaultClient;
+        }
+        if (_clients.TryGetValue(indexName, out value))
+        {
+            return value;
         }
         var connectionSettings = indexConfiguration.AuthenticationType switch
         {
