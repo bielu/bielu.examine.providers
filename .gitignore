@@ -456,3 +456,4 @@ src/bielu.Umbraco.TestProject/wwwroot/media
 src/bielu.Umbraco.TestProject/umbraco/Data
 src/bielu.cdn.ui/vite.config.ts.timestamp-1700604296431-aaa56c34b45a.mjs
 src/bielu.cdn.ui/vite.config.ts.timestamp-*.mjs
+**/Licenses
