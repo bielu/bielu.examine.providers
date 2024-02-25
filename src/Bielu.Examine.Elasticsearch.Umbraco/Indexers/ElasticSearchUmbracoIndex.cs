@@ -1,6 +1,7 @@
 ﻿using Bielu.Examine.Elasticsearch.Configuration;
 using Bielu.Examine.Elasticsearch.Indexers;
 using Bielu.Examine.Elasticsearch.Model;
+using Bielu.Examine.Elasticsearch.Providers;
 using Bielu.Examine.Elasticsearch.Services;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Clients.Elasticsearch.Mapping;
@@ -153,12 +154,12 @@ namespace Bielu.Examine.Elasticsearch.Umbraco.Indexers
         }
 
 
-        public Attempt<string> IsHealthy()
+        public Attempt<string?> IsHealthy()
         {
             var isHealthy = factory.GetOrCreateClient(IndexName).Cluster.Health();
             return isHealthy.Status ==  HealthStatus.Green ||  isHealthy.Status ==  HealthStatus.Yellow
                 ? Attempt<string>.Succeed()
-                : Attempt.Fail("ElasticSearch cluster is not healthy");
+                : Attempt.Fail("ElasticSearch cluster is not healthy")!;
         }
 
         public IReadOnlyDictionary<string, object?> Metadata
@@ -192,7 +193,7 @@ namespace Bielu.Examine.Elasticsearch.Umbraco.Indexers
                     d[nameof(ContentValueSetValidator.ParentId)] = cvsv.ParentId;
                 }
 
-                d[nameof(FieldDefinitionCollection)] = String.Join(", ", Searcher);
+                d[nameof(FieldDefinitionCollection)] = String.Join(", ", (Searcher as ElasticsearchExamineSearcher).AllFields);
                 return d.Where(x => x.Value != null).ToDictionary(x => x.Key, x => x.Value);
             }
         }

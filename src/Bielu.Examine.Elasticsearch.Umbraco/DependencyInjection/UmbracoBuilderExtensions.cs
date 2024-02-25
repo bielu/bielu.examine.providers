@@ -33,7 +33,7 @@ public static class UmbracoBuilderExtensions
         services.AddSingleton<IExamineManager, ExamineManager<IElasticSearchExamineIndex>>();
         return umbracoBuilder;
     }
-    private static IServiceCollection AddExamineElasticSearchIndex<TIndex>(this IServiceCollection serviceCollection,string name) where TIndex : class, IElasticSearchExamineIndex
+    public static IServiceCollection AddExamineElasticSearchIndex<TIndex>(this IServiceCollection serviceCollection,string name) where TIndex : class, IElasticSearchExamineIndex
     {
         return serviceCollection.AddSingleton<IIndex>(services =>
         {

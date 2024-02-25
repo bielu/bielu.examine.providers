@@ -11,4 +11,9 @@ public class BieluExamineElasticOptions
     [JsonIgnore]
     public static string SectionName { get; set; } = $"{BieluExamineConstants.SectionPrefix}";
     public List<IndexConfiguration?> IndexConfigurations { get; set; } = new List<IndexConfiguration?>();
+    public IndexConfiguration DefaultIndexConfiguration { get; set; } = new IndexConfiguration()
+    {
+        AuthenticationType = AuthenticationType.None,
+        ConnectionString = "http://localhost:9200",
+    };
 }

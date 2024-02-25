@@ -22,11 +22,11 @@ public class ElasticSearchClientFactory : IElasticSearchClientFactory
         {
             return value;
         }
-
+        var defaultConfiguration = _bieluExamineElasticOptions.DefaultIndexConfiguration;
         var indexConfiguration = _bieluExamineElasticOptions.IndexConfigurations.FirstOrDefault(x => x.Name == indexName);
-        if (indexConfiguration == null)
+        if(indexConfiguration == null)
         {
-            throw new InvalidOperationException($"Index configuration for {indexName} not found");
+            indexConfiguration = defaultConfiguration;
         }
         var connectionSettings = indexConfiguration.AuthenticationType switch
         {

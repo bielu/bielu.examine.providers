@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="Umbraco.Cms" Version="13.0.3" />
+    <PackageReference Include="Umbraco.Forms" Version="13.0.2" />
   </ItemGroup>
 
   <ItemGroup>
@@ -17,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Bielu.Examine.ElasticSearch.Umbraco.Forms\Bielu.Examine.ElasticSearch.Umbraco.Forms.csproj" />
     <ProjectReference Include="..\Bielu.Examine.Elasticsearch.Umbraco\Bielu.Examine.Elasticsearch.Umbraco.csproj" />
   </ItemGroup>
 

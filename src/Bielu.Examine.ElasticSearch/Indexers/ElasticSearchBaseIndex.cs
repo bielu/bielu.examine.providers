@@ -22,7 +22,7 @@ public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex
     private bool _isCreatingNewIndex;
     private static readonly object _existsLocker = new object();
     public string? ElasticUrl { get; set; }
-    public  string? ElasticId => examineElasticOptions.CurrentValue.IndexConfigurations.FirstOrDefault(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase))?.AuthenticationDetails?.Id;
+    public  string? ElasticId => examineElasticOptions.CurrentValue.IndexConfigurations.FirstOrDefault(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase))?.AuthenticationDetails?.Id ?? examineElasticOptions.CurrentValue.DefaultIndexConfiguration.AuthenticationDetails?.Id;
     public ElasticsearchClient Client => factory.GetOrCreateClient(name);
 
     /// <summary>
