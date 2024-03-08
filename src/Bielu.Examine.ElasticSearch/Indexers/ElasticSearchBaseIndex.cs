@@ -43,37 +43,20 @@ public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex
     public string? Analyzer { get; }
 
 
-    protected virtual void FromExamineType(PropertiesDescriptor<ElasticDocument> descriptor, FieldDefinition field)
+    protected virtual void FromExamineType(ref PropertiesDescriptor<ElasticDocument> descriptor, FieldDefinition field)
     {
+        var fieldType = field.Type.ToLowerInvariant();
 
-        switch (field.Type.ToLowerInvariant())
+        descriptor = fieldType switch
         {
-            case "date":
-            case "datetimeoffset":
-            case "datetime":
-                descriptor.Date(s => field.Name);
-                break;
-            case "double":
-                descriptor.DoubleNumber(s => field.Name);
-                break;
-            case "float":
-                descriptor.FloatNumber(s => field.Name);
-                break;
-
-            case "long":
-                descriptor.LongNumber(s => field.Name);
-                break;
-            case "int":
-            case "number":
-                descriptor.IntegerNumber(s => field.Name);
-                break;
-            case "raw":
-                descriptor.Keyword(s => field.Name);
-                break;
-            default:
-                descriptor.Text(s => field.Name, configure => configure.Analyzer(FromLuceneAnalyzer(Analyzer)));
-                break;
-        }
+            var type when _dateFormats.Contains(type) => descriptor.Date(s => field.Name),
+            "double" => descriptor.DoubleNumber(s => field.Name),
+            "float" => descriptor.FloatNumber(s => field.Name),
+            "long" => descriptor.LongNumber(s => field.Name),
+            var type when _integerFormats.Contains(type) => descriptor.IntegerNumber(s => field.Name),
+            "raw" => descriptor.Keyword(s => field.Name),
+            _ => descriptor.Text(s => field.Name, configure => configure.Analyzer(FromLuceneAnalyzer(Analyzer)))
+        };
     }
 
     protected virtual void OnDocumentWriting(Events.DocumentWritingEventArgs docArgs)
@@ -83,52 +66,26 @@ public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex
 
     private static string FromLuceneAnalyzer(string? analyzer)
     {
-        if (string.IsNullOrEmpty(analyzer) || !analyzer.Contains(','))
-            return "simple";
-
-        //if it contains a comma, we'll assume it's an assembly typed name
-
-
-        if (analyzer.Contains("StandardAnalyzer"))
-            return "standard";
-        if (analyzer.Contains("WhitespaceAnalyzer"))
-            return "whitespace";
-        if (analyzer.Contains("SimpleAnalyzer"))
-            return "simple";
-        if (analyzer.Contains("KeywordAnalyzer"))
-            return "keyword";
-        if (analyzer.Contains("StopAnalyzer"))
-            return "stop";
-        if (analyzer.Contains("ArabicAnalyzer"))
-            return "arabic";
-
-        if (analyzer.Contains("BrazilianAnalyzer"))
-            return "brazilian";
-
-        if (analyzer.Contains("ChineseAnalyzer"))
-            return "chinese";
-
-        if (analyzer.Contains("CJKAnalyzer"))
-            return "cjk";
-
-        if (analyzer.Contains("CzechAnalyzer"))
-            return "czech";
-
-        if (analyzer.Contains("DutchAnalyzer"))
-            return "dutch";
-
-        if (analyzer.Contains("FrenchAnalyzer"))
-            return "french";
-
-        if (analyzer.Contains("GermanAnalyzer"))
-            return "german";
-
-        if (analyzer.Contains("RussianAnalyzer"))
-            return "russian";
-        if (analyzer.Contains("StopAnalyzer"))
-            return "stop";
-        //if the above fails, return standard
-        return "simple";
+        return analyzer switch
+        {
+            null or "" => "simple",
+            _ when !analyzer.Contains(',') => "simple",
+            _ when analyzer.Contains("StandardAnalyzer") => "standard",
+            _ when analyzer.Contains("WhitespaceAnalyzer") => "whitespace",
+            _ when analyzer.Contains("SimpleAnalyzer") => "simple",
+            _ when analyzer.Contains("KeywordAnalyzer") => "keyword",
+            _ when analyzer.Contains("StopAnalyzer") => "stop",
+            _ when analyzer.Contains("ArabicAnalyzer") => "arabic",
+            _ when analyzer.Contains("BrazilianAnalyzer") => "brazilian",
+            _ when analyzer.Contains("ChineseAnalyzer") => "chinese",
+            _ when analyzer.Contains("CJKAnalyzer") => "cjk",
+            _ when analyzer.Contains("CzechAnalyzer") => "czech",
+            _ when analyzer.Contains("DutchAnalyzer") => "dutch",
+            _ when analyzer.Contains("FrenchAnalyzer") => "french",
+            _ when analyzer.Contains("GermanAnalyzer") => "german",
+            _ when analyzer.Contains("RussianAnalyzer") => "russian",
+            _ => "simple"
+        };
     }
 
     public void EnsureIndex(bool forceOverwrite)
@@ -212,7 +169,7 @@ public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex
 
         foreach (FieldDefinition field in fieldDefinitionCollection)
         {
-            FromExamineType(descriptor, field);
+            FromExamineType(ref descriptor, field);
         }
 
         return descriptor;
@@ -353,8 +310,11 @@ public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex
 
     public int FieldCount => IndexExists() ?  GetFields().Count() : 0;
 
+    private static readonly string[] _dateFormats = new[] { "date", "datetimeoffset", "datetime" };
+    private static readonly string[] _integerFormats = new[] { "int", "number" };
+
     #endregion
- #pragma warning disable CA1816
+#pragma warning disable CA1816
     public void Dispose()
  #pragma warning restore CA1816
     {

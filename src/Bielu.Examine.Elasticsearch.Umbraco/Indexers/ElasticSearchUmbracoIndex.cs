@@ -17,7 +17,7 @@ using IndexOptions = Examine.IndexOptions;
 
 namespace Bielu.Examine.Elasticsearch.Umbraco.Indexers
 {
-    public class ElasticSearchUmbracoIndex(string? name, ILoggerFactory loggerFactory, IElasticSearchClientFactory factory, IRuntime runtime,  ILogger<ElasticSearchUmbracoIndex> logger, IOptionsMonitor<IndexOptions> indexOptions, IOptionsMonitor<BieluExamineElasticOptions> examineElasticOptions) : ElasticSearchBaseIndex(name, logger,loggerFactory, factory, indexOptions, examineElasticOptions), IUmbracoIndex, IIndexDiagnostics
+    public class ElasticSearchUmbracoIndex(string? name, ILoggerFactory loggerFactory, IElasticSearchClientFactory factory, IRuntime runtime, ILogger<ElasticSearchUmbracoIndex> logger, IOptionsMonitor<IndexOptions> indexOptions, IOptionsMonitor<BieluExamineElasticOptions> examineElasticOptions) : ElasticSearchBaseIndex(name, logger, loggerFactory, factory, indexOptions, examineElasticOptions), IUmbracoIndex, IIndexDiagnostics
     {
         public const string SpecialFieldPrefix = "__";
         public const string IndexPathFieldName = SpecialFieldPrefix + "Path";
@@ -81,13 +81,13 @@ namespace Bielu.Examine.Elasticsearch.Umbraco.Indexers
         public override PropertiesDescriptor<ElasticDocument> CreateFieldsMapping(PropertiesDescriptor<ElasticDocument> descriptor,
             ReadOnlyFieldDefinitionCollection fieldDefinitionCollection)
         {
-            descriptor.Keyword( FormatFieldName("Id"));
+            descriptor.Keyword(FormatFieldName("Id"));
             descriptor.Keyword(FormatFieldName(ExamineFieldNames.ItemIdFieldName));
             descriptor.Keyword(FormatFieldName(ExamineFieldNames.ItemTypeFieldName));
             descriptor.Keyword(FormatFieldName(ExamineFieldNames.CategoryFieldName));
             foreach (FieldDefinition field in fieldDefinitionCollection)
             {
-                FromExamineType(descriptor, field);
+                FromExamineType(ref descriptor, field);
             }
 
             //  var docArgs = new MappingOperationEventArgs(descriptor);
@@ -95,7 +95,7 @@ namespace Bielu.Examine.Elasticsearch.Umbraco.Indexers
 
             return descriptor;
         }
-        protected override void FromExamineType(PropertiesDescriptor<ElasticDocument> descriptor, FieldDefinition field)
+        protected override void FromExamineType(ref PropertiesDescriptor<ElasticDocument> descriptor, FieldDefinition field)
         {
 
             if (_keywordFields.Contains(field.Name))
@@ -103,7 +103,7 @@ namespace Bielu.Examine.Elasticsearch.Umbraco.Indexers
                 descriptor.Keyword(s => FormatFieldName(field.Name));
                 return;
             }
-            base.FromExamineType(descriptor, field);
+            base.FromExamineType(ref descriptor, field);
         }
         protected override void PerformDeleteFromIndex(IEnumerable<string> itemIds,
             Action<IndexOperationEventArgs> onComplete)
@@ -157,45 +157,64 @@ namespace Bielu.Examine.Elasticsearch.Umbraco.Indexers
         public Attempt<string?> IsHealthy()
         {
             var isHealthy = factory.GetOrCreateClient(IndexName).Cluster.Health();
-            return isHealthy.Status ==  HealthStatus.Green ||  isHealthy.Status ==  HealthStatus.Yellow
-                ? Attempt<string>.Succeed()
-                : Attempt.Fail("ElasticSearch cluster is not healthy")!;
+            return isHealthy.Status == HealthStatus.Green || isHealthy.Status == HealthStatus.Yellow
+                ? Attempt<string?>.Succeed()
+                : Attempt.Fail("ElasticSearch cluster is not healthy");
         }
 
         public IReadOnlyDictionary<string, object?> Metadata
         {
             get
             {
-                var d = new Dictionary<string, object?>();
-                d[nameof(DocumentCount)] = DocumentCount;
-                d[nameof(Name)] = Name;
-                d[nameof(IndexAlias)] = IndexAlias;
-                d[nameof(FieldCount)] =  GetFields().Count();
-                d[nameof(IndexName)] = CurrentIndexName;
-                d[nameof(ElasticUrl)] = ElasticUrl;
-                d[nameof(ElasticId)] = ElasticId;
-                d[nameof(Analyzer)] = Analyzer;
-                d[nameof(EnableDefaultEventHandler)] = EnableDefaultEventHandler;
-                d[nameof(PublishedValuesOnly)] = PublishedValuesOnly;
+                var metadata = new Dictionary<string, object?>();
 
-                if (ValueSetValidator is ValueSetValidator vsv)
-                {
-                    d[nameof(ContentValueSetValidator.IncludeItemTypes)] = vsv.IncludeItemTypes;
-                    d[nameof(ContentValueSetValidator.ExcludeItemTypes)] = vsv.ExcludeItemTypes;
-                    d[nameof(ContentValueSetValidator.IncludeFields)] = vsv.IncludeFields;
-                    d[nameof(ContentValueSetValidator.ExcludeFields)] = vsv.ExcludeFields;
-                }
+                AddGeneralMetadata(metadata);
+                AddValueSetValidatorMetadata(metadata);
+                AddContentValueSetValidatorMetadata(metadata);
+                AddFieldDefinitionCollectionMetadata(metadata);
 
-                if (ValueSetValidator is ContentValueSetValidator cvsv)
-                {
-                    d[nameof(ContentValueSetValidator.PublishedValuesOnly)] = cvsv.PublishedValuesOnly;
-                    d[nameof(ContentValueSetValidator.SupportProtectedContent)] = cvsv.SupportProtectedContent;
-                    d[nameof(ContentValueSetValidator.ParentId)] = cvsv.ParentId;
-                }
-
-                d[nameof(FieldDefinitionCollection)] = String.Join(", ", (Searcher as ElasticsearchExamineSearcher).AllFields);
-                return d.Where(x => x.Value != null).ToDictionary(x => x.Key, x => x.Value);
+                return metadata.Where(x => x.Value != null).ToDictionary(x => x.Key, x => x.Value);
             }
+        }
+
+        private void AddGeneralMetadata(Dictionary<string, object?> metadata)
+        {
+            metadata[nameof(DocumentCount)] = DocumentCount;
+            metadata[nameof(Name)] = Name;
+            metadata[nameof(IndexAlias)] = IndexAlias;
+            metadata[nameof(FieldCount)] = GetFields().Count();
+            metadata[nameof(IndexName)] = CurrentIndexName;
+            metadata[nameof(ElasticUrl)] = ElasticUrl;
+            metadata[nameof(ElasticId)] = ElasticId;
+            metadata[nameof(Analyzer)] = Analyzer;
+            metadata[nameof(EnableDefaultEventHandler)] = EnableDefaultEventHandler;
+            metadata[nameof(PublishedValuesOnly)] = PublishedValuesOnly;
+        }
+
+        private void AddValueSetValidatorMetadata(Dictionary<string, object?> metadata)
+        {
+            if (ValueSetValidator is ValueSetValidator vsv)
+            {
+                metadata[nameof(ContentValueSetValidator.IncludeItemTypes)] = vsv.IncludeItemTypes;
+                metadata[nameof(ContentValueSetValidator.ExcludeItemTypes)] = vsv.ExcludeItemTypes;
+                metadata[nameof(ContentValueSetValidator.IncludeFields)] = vsv.IncludeFields;
+                metadata[nameof(ContentValueSetValidator.ExcludeFields)] = vsv.ExcludeFields;
+            }
+        }
+
+        private void AddContentValueSetValidatorMetadata(Dictionary<string, object?> metadata)
+        {
+            if (ValueSetValidator is ContentValueSetValidator cvsv)
+            {
+                metadata[nameof(ContentValueSetValidator.PublishedValuesOnly)] = cvsv.PublishedValuesOnly;
+                metadata[nameof(ContentValueSetValidator.SupportProtectedContent)] = cvsv.SupportProtectedContent;
+                metadata[nameof(ContentValueSetValidator.ParentId)] = cvsv.ParentId;
+            }
+        }
+
+        private void AddFieldDefinitionCollectionMetadata(Dictionary<string, object?> metadata)
+        {
+            metadata[nameof(FieldDefinitionCollection)] = String.Join(", ", (Searcher as ElasticsearchExamineSearcher).AllFields);
         }
     }
 }

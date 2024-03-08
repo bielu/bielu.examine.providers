@@ -19,6 +19,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionsFiles", "Solutions
 		..\.editorconfig = ..\.editorconfig
 		..\.gitignore = ..\.gitignore
 		..\version.props = ..\version.props
+		directory.build.props = directory.build.props
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bielu.Examine.ElasticSearch.Umbraco.Forms", "Bielu.Examine.ElasticSearch.Umbraco.Forms\Bielu.Examine.ElasticSearch.Umbraco.Forms.csproj", "{3881358D-FA15-44AF-9F32-E2B639771493}"
