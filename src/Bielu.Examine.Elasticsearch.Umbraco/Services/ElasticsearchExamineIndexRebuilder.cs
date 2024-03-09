@@ -62,7 +62,11 @@ public class ElasticsearchExamineIndexRebuilder :IIndexRebuilder
 
         if (useBackgroundThread)
         {
-            _logger.LogInformation("Starting async background thread for rebuilding index {indexName}.", indexName);
+ #pragma warning disable CA1727
+ #pragma warning disable CA1848
+            _logger.LogInformation("Starting async background thread for rebuilding index {IndexName}", indexName);
+ #pragma warning restore CA1848
+ #pragma warning restore CA1727
 
             _backgroundTaskQueue.QueueBackgroundWorkItem(
                 cancellationToken =>
@@ -70,7 +74,7 @@ public class ElasticsearchExamineIndexRebuilder :IIndexRebuilder
                     // Do not flow AsyncLocal to the child thread
                     using (ExecutionContext.SuppressFlow())
                     {
-                        Task.Run(() => RebuildIndex(indexName, delay.Value, cancellationToken));
+                        Task.Run(() => RebuildIndex(indexName, delay.Value, cancellationToken), cancellationToken);
 
                         // immediately return so the queue isn't waiting.
                         return Task.CompletedTask;
@@ -97,9 +101,11 @@ public class ElasticsearchExamineIndexRebuilder :IIndexRebuilder
 
         if (useBackgroundThread)
         {
-            if (_logger.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Debug))
+            if (_logger.IsEnabled(LogLevel.Debug))
             {
+ #pragma warning disable CA1848
                 _logger.LogDebug($"Queuing background job for {nameof(RebuildIndexes)}.");
+ #pragma warning restore CA1848
             }
 
             _backgroundTaskQueue.QueueBackgroundWorkItem(
@@ -110,7 +116,7 @@ public class ElasticsearchExamineIndexRebuilder :IIndexRebuilder
                     {
                         // This is a fire/forget task spawned by the background thread queue (which means we
                         // don't need to worry about ExecutionContext flowing).
-                        Task.Run(() => RebuildIndexes(onlyEmptyIndexes, delay.Value, cancellationToken));
+                        Task.Run(() => RebuildIndexes(onlyEmptyIndexes, delay.Value, cancellationToken), cancellationToken);
 
                         // immediately return so the queue isn't waiting.
                         return Task.CompletedTask;
@@ -136,8 +142,10 @@ public class ElasticsearchExamineIndexRebuilder :IIndexRebuilder
         {
             if (!Monitor.TryEnter(_rebuildLocker))
             {
+ #pragma warning disable CA1848
                 _logger.LogWarning(
                     "Call was made to RebuildIndexes but the task runner for rebuilding is already running");
+ #pragma warning restore CA1848
             }
             else
             {
@@ -182,8 +190,10 @@ public class ElasticsearchExamineIndexRebuilder :IIndexRebuilder
         {
             if (!Monitor.TryEnter(_rebuildLocker))
             {
+ #pragma warning disable CA1848
                 _logger.LogWarning(
                     $"Call was made to {nameof(RebuildIndexes)} but the task runner for rebuilding is already running");
+ #pragma warning restore CA1848
             }
             else
             {
@@ -217,7 +227,9 @@ public class ElasticsearchExamineIndexRebuilder :IIndexRebuilder
                     }
                     catch (Exception e)
                     {
+ #pragma warning disable CA1848
                         _logger.LogError(e, "Index populating failed for populator {Populator}", populator.GetType());
+ #pragma warning restore CA1848
                     }
                 }
             }

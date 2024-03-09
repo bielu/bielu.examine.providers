@@ -18,7 +18,7 @@ using IndexOptions = Examine.IndexOptions;
 
 namespace Bielu.Examine.Elasticsearch.Umbraco.Indexers
 {
-    public class ElasticSearchUmbracoIndex(string? name, ILoggerFactory loggerFactory, IElasticSearchClientFactory factory, IRuntime runtime, ILogger<ElasticSearchUmbracoIndex> logger, IElasticsearchService elasticSearchService, IOptionsMonitor<LuceneDirectoryIndexOptions> indexOptions, IOptionsMonitor<BieluExamineElasticOptions> examineElasticOptions) : ElasticSearchBaseIndex(name, logger, loggerFactory, elasticSearchService,factory, indexOptions, examineElasticOptions), IUmbracoIndex, IIndexDiagnostics
+    public class ElasticSearchUmbracoIndex(string? name, ILoggerFactory loggerFactory, IRuntime runtime, ILogger<ElasticSearchUmbracoIndex> logger, IElasticsearchService elasticSearchService, IIndexStateService stateService, IOptionsMonitor<LuceneDirectoryIndexOptions> indexOptions, IOptionsMonitor<BieluExamineElasticOptions> examineElasticOptions) : ElasticSearchBaseIndex(name, logger, loggerFactory, elasticSearchService,stateService,indexOptions, examineElasticOptions), IUmbracoIndex, IIndexDiagnostics
     {
 
         public const string SpecialFieldPrefix = "__";
@@ -111,24 +111,7 @@ namespace Bielu.Examine.Elasticsearch.Umbraco.Indexers
             Action<IndexOperationEventArgs> onComplete)
         {
 
-            var descriptor = new BulkRequestDescriptor();
-            descriptor = descriptor;
-            foreach (var id in itemIds.Where(x => !string.IsNullOrWhiteSpace(x)))
-            {
-                descriptor.Delete(x => x.Index(IndexName).Id(id));
-            }
-
-            var response = factory.GetOrCreateClient(IndexName).Bulk(descriptor);
-            if (response.Errors)
-            {
-                foreach (var itemWithError in response.ItemsWithErrors)
-                {
- #pragma warning disable CA1848
-                    logger.LogError("Failed to remove from index document {NodeID}: {Error}",
-                        itemWithError.Id, itemWithError.Error);
- #pragma warning restore CA1848
-                }
-            }
+            var response = elasticSearchService.DeleteBatch(name,itemIds.Where(x => !string.IsNullOrWhiteSpace(x)));
         }
 
 
@@ -158,8 +141,8 @@ namespace Bielu.Examine.Elasticsearch.Umbraco.Indexers
 
         public Attempt<string?> IsHealthy()
         {
-            var isHealthy = factory.GetOrCreateClient(IndexName).Cluster.Health();
-            return isHealthy.Status == HealthStatus.Green || isHealthy.Status == HealthStatus.Yellow
+            var isHealthy = elasticSearchService.HealthCheck(name);
+            return isHealthy
                 ? Attempt<string?>.Succeed()
                 : Attempt.Fail("ElasticSearch cluster is not healthy");
         }
@@ -181,11 +164,16 @@ namespace Bielu.Examine.Elasticsearch.Umbraco.Indexers
 
         private void AddGeneralMetadata(Dictionary<string, object?> metadata)
         {
+            var state = stateService.GetIndexState(name);
             metadata[nameof(DocumentCount)] = DocumentCount;
             metadata[nameof(Name)] = Name;
             metadata[nameof(IndexAlias)] = IndexAlias;
             metadata[nameof(FieldCount)] = GetFields().Count();
-            metadata[nameof(IndexName)] = CurrentIndexName;
+            metadata[nameof(IndexName)] = state.IndexName;
+            metadata[nameof(state.CurrentIndexName)] = state.CurrentIndexName;
+            metadata[nameof(state.Reindexing)] = state.Reindexing;
+            metadata[nameof(state.CreatingNewIndex)] = state.CreatingNewIndex;
+            metadata[nameof(IndexName)] = state.IndexName;
             metadata[nameof(ElasticUrl)] = ElasticUrl;
             metadata[nameof(ElasticId)] = ElasticId;
             metadata[nameof(Analyzer)] = Analyzer;

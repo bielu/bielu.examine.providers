@@ -40,7 +40,7 @@ public class ElasticsearchExamineSearcher(string name, string? indexAlias, ILogg
             {
                 return (bool)_exists;
             }
-            _exists = elasticsearchService.IndexExists(name, indexAlias);
+            _exists = elasticsearchService.IndexExists(name);
             return (bool)_exists;
         }
     }
@@ -66,7 +66,7 @@ public class ElasticsearchExamineSearcher(string name, string? indexAlias, ILogg
             if (!IndexExists) return null;
             if (_fieldsMapping != null) return _fieldsMapping;
 
-            _fieldsMapping = elasticsearchService.GetProperties(name,IndexAlias);
+            _fieldsMapping = elasticsearchService.GetProperties(name);
             return _fieldsMapping;
         }
     }

@@ -103,7 +103,7 @@ public partial class ElasticSearchQuery(
             var outer = new BooleanQuery();
             var inner = new BooleanQuery();
 
-            var fieldsMapping = elasticsearchService.GetProperties(indexName, indexAliast);
+            var fieldsMapping = elasticsearchService.GetProperties(indexName);
 
             foreach (var valueType in fieldsMapping.Where(e => fields.Contains(e.Key.Name)))
             {
@@ -135,7 +135,7 @@ public partial class ElasticSearchQuery(
 
     public override IEnumerable<string> GetAllProperties()
     {
-        return elasticsearchService.GetProperties(indexName, indexAliast).Where(x => x.Value.Type == "text").Select(x => x.Key.Name);
+        return elasticsearchService.GetProperties(indexName).Where(x => x.Value.Type == "text").Select(x => x.Key.Name);
     }
     public override IIndexFieldValueType FromEngineType<TPropertyName, TProperty>(KeyValuePair<TPropertyName, TProperty> propetyField)
     {

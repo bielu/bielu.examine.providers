@@ -85,14 +85,10 @@ public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex
         };
     }
 
-    public void EnsureIndex(bool forceOverwrite)
-    {
-       elasticSearchService.EnsuredIndexExists(IndexName, IndexAlias);
-    }
+
 
     private void CreateNewIndex(bool indexExists)
     {
-
         elasticSearchService.CreateIndex(name);
     }
     private static void CleanOldIndexes()
@@ -118,11 +114,6 @@ public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex
     private ElasticsearchExamineSearcher CreateSearcher()
     {
         return new ElasticsearchExamineSearcher(Name, IndexAlias, LoggerFactory, elasticSearchService);
-    }
-
-    private ElasticsearchClient GetIndexClient()
-    {
-        return factory.GetOrCreateClient(IndexName);
     }
 
     public static string FormatFieldName(string fieldName)
@@ -177,45 +168,23 @@ public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex
 
     protected override void PerformIndexItems(IEnumerable<ValueSet> values, Action<IndexOperationEventArgs> onComplete)
     {
-        var aliasExists = elasticSearchService.IndexExists(IndexName, IndexAlias);
-        var indexesMappedToAlias = aliasExists
-            ? elasticSearchService.GetCurrentIndexNames(IndexName, IndexAlias)
-            : new List<string>();
-        EnsureIndex(false);
+       long totalResults =elasticSearchService.IndexBatch(name,values);
 
-        var indexTarget = _isReindexing ? TempindexAlias : CurrentIndexName;
-        var indexer = GetIndexClient();
-        var totalResults = 0;
-        var batch = ToElasticSearchDocs(values, indexTarget);
-        var indexResult = indexer.Bulk(batch);
-        totalResults += indexResult.Items.Count;
-
-
-        if (_isReindexing)
-        {
-            indexer.Indices.UpdateAliases(ba => ba
-                .Actions(remove => remove.Remove(removeAction => removeAction.Alias(IndexAlias))
-                    .Add(add => add.Index(IndexName).Alias(IndexAlias))));
-
-
-            indexesMappedToAlias.Where(e => e != IndexName).ToList()
-                .ForEach(e => Client.Indices.Delete(new DeleteIndexRequest(e)));
-        }
-
-
-        onComplete(new IndexOperationEventArgs(this, totalResults));
+        onComplete(new IndexOperationEventArgs(this, (int)totalResults));
     }
 
     protected override void PerformDeleteFromIndex(IEnumerable<string> itemIds,
         Action<IndexOperationEventArgs> onComplete)
     {
+        long totalResults =elasticSearchService.DeleteBatch(name,itemIds);
 
+        onComplete(new IndexOperationEventArgs(this, (int)totalResults));
     }
 
 
     public override void CreateIndex()
     {
-        EnsureIndex(true);
+        elasticSearchService.EnsuredIndexExists(name,true);
     }
 
     public override bool IndexExists()
@@ -224,10 +193,9 @@ public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex
         {
             return _exists.Value;
         }
-        if (elasticSearchService.IndexExists(IndexName, IndexAlias))
+        if (elasticSearchService.IndexExists(IndexName))
         {
             _exists = true;
-            CurrentIndexName = (elasticSearchService.GetCurrentIndexNames(IndexName, IndexAlias) ?? Array.Empty<string>()).FirstOrDefault();
         }
         else
         {
@@ -242,17 +210,12 @@ public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex
         elasticSearchService.SwapTempIndex(name);
     }
 
-    public bool TempIndexExists()
-    {
-        return Client.Indices.Exists(TempindexAlias).Exists;
-    }
-
     public IEnumerable<string> GetFields() => ((ElasticsearchExamineSearcher)Searcher).AllFields;
 
     #region IIndexDiagnostics
 
     public int DocumentCount =>
-        (int)(IndexExists() ? Client.Count<ElasticDocument>(e => e.Indices(IndexAlias)).Count : 0);
+        (int)(IndexExists() ? elasticSearchService.GetDocumentCount(name) : 0);
 
     public int FieldCount => IndexExists() ? GetFields().Count() : 0;
 
