@@ -22,24 +22,9 @@ using Query = Elastic.Clients.Elasticsearch.QueryDsl.Query;
 
 namespace Bielu.Examine.Elasticsearch.Providers;
 
-public class ElasticsearchExamineSearcher(string name, string? indexAlias, ILoggerFactory loggerFactory, IElasticSearchClientFactory clientFactory,
-    IOptionsMonitor<BieluExamineElasticOptions> connectionConfiguration) : BaseSearchProvider(name), IDisposable
+public class ElasticsearchExamineSearcher(string name, string? indexAlias, ILoggerFactory loggerFactory, IElasticsearchService elasticsearchService) : BaseSearchProvider(name), IDisposable
 {
-    private ElasticsearchClient? _client;
     public string? IndexAlias => indexAlias;
-
-    public ElasticsearchClient Client
-    {
-        get
-        {
-            if (_client != null)
-            {
-                return _client;
-            }
-            _client = clientFactory.GetOrCreateClient(name);
-            return _client;
-        }
-    }
     private readonly List<SortField> _sortFields = new List<SortField>();
     private string?[] _allFields;
     private Properties _fieldsMapping;
@@ -55,7 +40,7 @@ public class ElasticsearchExamineSearcher(string name, string? indexAlias, ILogg
             {
                 return (bool)_exists;
             }
-            _exists = Client.IndexExists(indexAlias);
+            _exists = elasticsearchService.IndexExists(name, indexAlias);
             return (bool)_exists;
         }
     }
@@ -81,15 +66,7 @@ public class ElasticsearchExamineSearcher(string name, string? indexAlias, ILogg
             if (!IndexExists) return null;
             if (_fieldsMapping != null) return _fieldsMapping;
 
-
-            var indexesMappedToAlias = Client.GetIndexesAssignedToAlias(indexAlias).ToList();
-            if(indexesMappedToAlias.Count <= 0)
-            {
-                return null;
-            }
-            GetMappingResponse response =
-                Client.Indices.GetMapping( mapping=>mapping.Indices(indexesMappedToAlias[0]));
-            _fieldsMapping = response.GetMappingFor(indexesMappedToAlias[0]).Properties;
+            _fieldsMapping = elasticsearchService.GetProperties(name,IndexAlias);
             return _fieldsMapping;
         }
     }
@@ -118,11 +95,8 @@ public class ElasticsearchExamineSearcher(string name, string? indexAlias, ILogg
         }
 
         searchDescriptor = searchDescriptor.From(options.Skip).Size(options.Take);
+        return elasticsearchService.Search(name,searchDescriptor);
 
-        var json = Client.RequestResponseSerializer.SerializeToString(searchDescriptor);
-        SearchResponse<ElasticDocument>
-            searchResult = Client.Search<ElasticDocument>(searchDescriptor.Explain());
-        return searchResult.ConvertToSearchResults();
     }
 
 
@@ -139,7 +113,7 @@ public class ElasticsearchExamineSearcher(string name, string? indexAlias, ILogg
     public override IQuery CreateQuery(string category = null,
         BooleanOperation defaultOperation = BooleanOperation.And)
     {
-        return new ElasticSearchQuery(new ElasticSearchQueryParser(LuceneVersion.LUCENE_CURRENT,ParsedProperties,new StandardAnalyzer(LuceneVersion.LUCENE_48)), this,loggerFactory,loggerFactory.CreateLogger<ElasticSearchQuery>() ,category, new LuceneSearchOptions(), defaultOperation );
+        return new ElasticSearchQuery(name,indexAlias,new ElasticSearchQueryParser(LuceneVersion.LUCENE_CURRENT,ParsedProperties,new StandardAnalyzer(LuceneVersion.LUCENE_48)), elasticsearchService,loggerFactory,loggerFactory.CreateLogger<ElasticSearchQuery>() ,category, new LuceneSearchOptions(), defaultOperation );
     }
  #pragma warning disable CA1816
     public void Dispose() => loggerFactory.Dispose();

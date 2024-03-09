@@ -4,6 +4,7 @@ using Bielu.Examine.Core.Regex;
 using Bielu.Examine.Elasticsearch.Extensions;
 using Bielu.Examine.Elasticsearch.Model;
 using Bielu.Examine.Elasticsearch.Providers;
+using Bielu.Examine.Elasticsearch.Services;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Clients.Elasticsearch.Mapping;
 using Elastic.Clients.Elasticsearch.QueryDsl;
@@ -27,8 +28,10 @@ using WildcardQuery = Lucene.Net.Search.WildcardQuery;
 namespace Bielu.Examine.Elasticsearch.Queries;
 
 public partial class ElasticSearchQuery(
+    string indexName,
+    string indexAliast,
     CustomMultiFieldQueryParser queryParser,
-    ElasticsearchExamineSearcher searcher,
+    IElasticsearchService elasticsearchService,
     ILoggerFactory loggerFactory,
     ILogger<ElasticSearchQuery> logger,
     string category,
@@ -44,20 +47,10 @@ public partial class ElasticSearchQuery(
     private SearchRequest<Document>? _searchRequest;
     private Func<SearchRequestDescriptor<ElasticDocument>, SearchRequest<Document>>? _searchSelector;
     private Action<SortOptionsDescriptor<ElasticDocument>> _sortDescriptor;
-    public override ISearchResults Execute(QueryOptions? options)
+    public override ISearchResults Execute(QueryOptions? options) => DoSearch(options);
+    private ElasticSearchSearchResults DoSearch(QueryOptions? options)
     {
-        var searchResult = DoSearch(options);
-        if (!searchResult.IsSuccess())
-        {
- #pragma warning disable CA1848
-            logger.LogError("Failed to execute search query: {DebugInfo}", searchResult.DebugInformation);
- #pragma warning restore CA1848
-        }
-        return searchResult.ConvertToSearchResults();
-    }
-    private SearchResponse<ElasticDocument> DoSearch(QueryOptions? options)
-    {
-        SearchResponse<ElasticDocument> searchResult;
+        ElasticSearchSearchResults searchResult;
         var query = ExtractQuery();
         if (query != null)
         {
@@ -73,22 +66,20 @@ public partial class ElasticSearchQuery(
         if (_queryContainer != null)
         {
             SearchRequestDescriptor<ElasticDocument> searchDescriptor = new SearchRequestDescriptor<ElasticDocument>();
-            searchDescriptor.Index(searcher.IndexAlias)
+            searchDescriptor.Index(indexAliast)
                 .Size(options.Take)
                 .From(options.Skip)
                 .Query(_queryContainer)
                 .Sort(_sortDescriptor);
-
-            var json = searcher.Client.RequestResponseSerializer.SerializeToString(searchDescriptor);
-            searchResult = searcher.Client.Search<ElasticDocument>(searchDescriptor);
+            searchResult = elasticsearchService.Search(indexName, searchDescriptor);
         }
         else if (_searchRequest != null)
         {
-            searchResult = searcher.Client.Search<ElasticDocument>(_searchRequest);
+            searchResult = elasticsearchService.Search(indexName, _searchRequest);
         }
         else
         {
-            searchResult = searcher.Client.Search<ElasticDocument>(_searchSelector.Invoke(new SearchRequestDescriptor<ElasticDocument>()));
+            searchResult = elasticsearchService.Search(indexName, (_searchSelector.Invoke(new SearchRequestDescriptor<ElasticDocument>())));
         }
 
 
@@ -112,7 +103,7 @@ public partial class ElasticSearchQuery(
             var outer = new BooleanQuery();
             var inner = new BooleanQuery();
 
-            var fieldsMapping = searcher.AllProperties;
+            var fieldsMapping = elasticsearchService.GetProperties(indexName, indexAliast);
 
             foreach (var valueType in fieldsMapping.Where(e => fields.Contains(e.Key.Name)))
             {
@@ -144,7 +135,7 @@ public partial class ElasticSearchQuery(
 
     public override IEnumerable<string> GetAllProperties()
     {
-        return searcher.AllProperties.Where(x => x.Value.Type == "text").Select(x => x.Key.Name);
+        return elasticsearchService.GetProperties(indexName, indexAliast).Where(x => x.Value.Type == "text").Select(x => x.Key.Name);
     }
     public override IIndexFieldValueType FromEngineType<TPropertyName, TProperty>(KeyValuePair<TPropertyName, TProperty> propetyField)
     {

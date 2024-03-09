@@ -6,6 +6,7 @@ using Bielu.Examine.Elasticsearch.Services;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Clients.Elasticsearch.Mapping;
 using Examine;
+using Examine.Lucene;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Umbraco.Cms.Core;
@@ -17,8 +18,9 @@ using IndexOptions = Examine.IndexOptions;
 
 namespace Bielu.Examine.Elasticsearch.Umbraco.Indexers
 {
-    public class ElasticSearchUmbracoIndex(string? name, ILoggerFactory loggerFactory, IElasticSearchClientFactory factory, IRuntime runtime, ILogger<ElasticSearchUmbracoIndex> logger, IOptionsMonitor<IndexOptions> indexOptions, IOptionsMonitor<BieluExamineElasticOptions> examineElasticOptions) : ElasticSearchBaseIndex(name, logger, loggerFactory, factory, indexOptions, examineElasticOptions), IUmbracoIndex, IIndexDiagnostics
+    public class ElasticSearchUmbracoIndex(string? name, ILoggerFactory loggerFactory, IElasticSearchClientFactory factory, IRuntime runtime, ILogger<ElasticSearchUmbracoIndex> logger, IElasticsearchService elasticSearchService, IOptionsMonitor<LuceneDirectoryIndexOptions> indexOptions, IOptionsMonitor<BieluExamineElasticOptions> examineElasticOptions) : ElasticSearchBaseIndex(name, logger, loggerFactory, elasticSearchService,factory, indexOptions, examineElasticOptions), IUmbracoIndex, IIndexDiagnostics
     {
+
         public const string SpecialFieldPrefix = "__";
         public const string IndexPathFieldName = SpecialFieldPrefix + "Path";
         public const string NodeKeyFieldName = SpecialFieldPrefix + "Key";
@@ -39,7 +41,7 @@ namespace Bielu.Examine.Elasticsearch.Umbraco.Indexers
 
         public long GetDocumentCount() => 0;
         public IEnumerable<string> GetFieldNames() => GetFields();
-        public bool SupportProtectedContent { get; }
+        public bool SupportProtectedContent => CurrentContentValueSetValidator?.SupportProtectedContent ?? false;
         private readonly bool _configBased;
 
         protected IProfilingLogger ProfilingLogger { get; }
@@ -48,8 +50,8 @@ namespace Bielu.Examine.Elasticsearch.Umbraco.Indexers
         /// When set to true Umbraco will keep the index in sync with Umbraco data automatically
         /// </summary>
 
-        public bool PublishedValuesOnly { get; internal set; }
-
+        public bool PublishedValuesOnly => CurrentContentValueSetValidator?.PublishedValuesOnly ?? false;
+        private IContentValueSetValidator? CurrentContentValueSetValidator => indexOptions.CurrentValue.Validator as IContentValueSetValidator;
         /// <summary>
         /// override to check if we can actually initialize.
         /// </summary>

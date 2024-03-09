@@ -4,5 +4,5 @@ namespace Bielu.Examine.Elasticsearch.Indexers;
 
 public interface IElasticSearchExamineIndex : IIndex
 {
-
+    void SwapIndex();
 }
