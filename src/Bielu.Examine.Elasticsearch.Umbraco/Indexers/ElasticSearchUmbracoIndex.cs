@@ -1,4 +1,5 @@
-﻿using Bielu.Examine.Elasticsearch.Configuration;
+﻿using Bielu.Examine.Core.Extensions;
+using Bielu.Examine.Elasticsearch.Configuration;
 using Bielu.Examine.Elasticsearch.Indexers;
 using Bielu.Examine.Elasticsearch.Model;
 using Bielu.Examine.Elasticsearch.Providers;
@@ -83,10 +84,10 @@ namespace Bielu.Examine.Elasticsearch.Umbraco.Indexers
         public override PropertiesDescriptor<ElasticDocument> CreateFieldsMapping(PropertiesDescriptor<ElasticDocument> descriptor,
             ReadOnlyFieldDefinitionCollection fieldDefinitionCollection)
         {
-            descriptor.Keyword(FormatFieldName("Id"));
-            descriptor.Keyword(FormatFieldName(ExamineFieldNames.ItemIdFieldName));
-            descriptor.Keyword(FormatFieldName(ExamineFieldNames.ItemTypeFieldName));
-            descriptor.Keyword(FormatFieldName(ExamineFieldNames.CategoryFieldName));
+            descriptor.Keyword("Id".FormatFieldName());
+            descriptor.Keyword(ExamineFieldNames.ItemIdFieldName.FormatFieldName());
+            descriptor.Keyword(ExamineFieldNames.ItemTypeFieldName.FormatFieldName());
+            descriptor.Keyword(ExamineFieldNames.CategoryFieldName.FormatFieldName());
             foreach (FieldDefinition field in fieldDefinitionCollection)
             {
                 FromExamineType(ref descriptor, field);
@@ -102,7 +103,7 @@ namespace Bielu.Examine.Elasticsearch.Umbraco.Indexers
 
             if (_keywordFields.Contains(field.Name))
             {
-                descriptor.Keyword(s => FormatFieldName(field.Name));
+                descriptor.Keyword(field.Name.FormatFieldName());
                 return;
             }
             base.FromExamineType(ref descriptor, field);

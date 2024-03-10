@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using Bielu.Examine.Core.Extensions;
 using Bielu.Examine.Elasticsearch.Configuration;
 using Bielu.Examine.Elasticsearch.Helpers;
 using Bielu.Examine.Elasticsearch.Model;
@@ -35,24 +36,24 @@ public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex
     };
 
 
-    public string? IndexAlias  => IndexState.IndexAlias;
-    private string? TempindexAlias  => IndexState.TempIndexAliast;
+    public string? IndexAlias => IndexState.IndexAlias;
+    private string? TempindexAlias => IndexState.TempIndexAlias;
     public string? Analyzer { get; }
 
 
     protected virtual void FromExamineType(ref PropertiesDescriptor<ElasticDocument> descriptor, FieldDefinition field)
     {
         var fieldType = field.Type.ToLowerInvariant();
-
+        var fieldName = field.Name.FormatFieldName();
         descriptor = fieldType switch
         {
-            var type when _dateFormats.Contains(type) => descriptor.Date(s => field.Name),
-            "double" => descriptor.DoubleNumber(s => field.Name),
-            "float" => descriptor.FloatNumber(s => field.Name),
-            "long" => descriptor.LongNumber(s => field.Name),
-            var type when _integerFormats.Contains(type) => descriptor.IntegerNumber(s => field.Name),
-            "raw" => descriptor.Keyword(s => field.Name),
-            _ => descriptor.Text(s => field.Name, configure => configure.Analyzer(FromLuceneAnalyzer(Analyzer)))
+            var type when _dateFormats.Contains(type) => descriptor.Date(fieldName),
+            "double" => descriptor.DoubleNumber(fieldName),
+            "float" => descriptor.FloatNumber(fieldName),
+            "long" => descriptor.LongNumber(fieldName),
+            var type when _integerFormats.Contains(type) => descriptor.IntegerNumber(fieldName),
+            "raw" => descriptor.Keyword(fieldName),
+            _ => descriptor.Text(fieldName, configure => configure.Analyzer(FromLuceneAnalyzer(Analyzer)))
         };
     }
 
@@ -84,25 +85,14 @@ public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex
             _ => "simple"
         };
     }
-
-
-
-    private void CreateNewIndex(bool indexExists)
-    {
-        elasticSearchService.CreateIndex(name);
-    }
-    private static void CleanOldIndexes()
-    {
-        //todo: implement
-    }
     public virtual PropertiesDescriptor<ElasticDocument> CreateFieldsMapping(PropertiesDescriptor<ElasticDocument> descriptor,
         ReadOnlyFieldDefinitionCollection fieldDefinitionCollection)
     {
 
         descriptor.Keyword(s => "Id");
-        descriptor.Keyword(s => FormatFieldName(ExamineFieldNames.ItemIdFieldName));
-        descriptor.Keyword(s => FormatFieldName(ExamineFieldNames.ItemTypeFieldName));
-        descriptor.Keyword(s => FormatFieldName(ExamineFieldNames.CategoryFieldName));
+        descriptor.Keyword(s => ExamineFieldNames.ItemIdFieldName.FormatFieldName());
+        descriptor.Keyword(s => ExamineFieldNames.ItemTypeFieldName.FormatFieldName());
+        descriptor.Keyword(s => ExamineFieldNames.CategoryFieldName.FormatFieldName());
 
         foreach (FieldDefinition field in fieldDefinitionCollection)
         {
@@ -116,59 +106,10 @@ public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex
         return new ElasticsearchExamineSearcher(Name, IndexAlias, LoggerFactory, elasticSearchService);
     }
 
-    public static string FormatFieldName(string fieldName)
-    {
-        return $"{fieldName.Replace(".", "_")}";
-    }
-
-    private BulkRequestDescriptor ToElasticSearchDocs(IEnumerable<ValueSet> docs, string? indexTarget)
-    {
-        var descriptor = new BulkRequestDescriptor();
-
-
-        foreach (var d in docs)
-        {
-            try
-            {
-                var indexingNodeDataArgs = new IndexingItemEventArgs(this, d);
-                OnTransformingIndexValues(indexingNodeDataArgs);
-
-                if (!indexingNodeDataArgs.Cancel)
-                {
-                    //this is just a dictionary
-                    var ad = new ElasticDocument
-                    {
-                        ["Id"] = d.Id,
-                        [FormatFieldName(ExamineFieldNames.ItemIdFieldName)] = d.Id,
-                        [FormatFieldName(ExamineFieldNames.ItemTypeFieldName)] = d.ItemType,
-                        [FormatFieldName(ExamineFieldNames.CategoryFieldName)] = d.Category
-                    };
-
-                    foreach (var i in d.Values)
-                    {
-                        if (i.Value.Count > 0)
-                            ad[FormatFieldName(i.Key)] = i.Value.Count == 1 ? i.Value[0] : i.Value;
-                    }
-
-                    var docArgs = new Events.DocumentWritingEventArgs(d, ad);
-                    OnDocumentWriting(docArgs);
-                    descriptor.Index<ElasticDocument>(ad, indexingNodeDataArgs => indexingNodeDataArgs.Index(indexTarget).Id(ad["Id"].ToString()));
-                }
-            }
-            catch (Exception e)
-            {
- #pragma warning disable CA1848
-                logger.LogError(e, "Failed to index document {NodeID}", d.Id);
- #pragma warning restore CA1848
-            }
-        }
-
-        return descriptor;
-    }
 
     protected override void PerformIndexItems(IEnumerable<ValueSet> values, Action<IndexOperationEventArgs> onComplete)
     {
-       long totalResults =elasticSearchService.IndexBatch(name,values);
+        long totalResults = elasticSearchService.IndexBatch(name, values);
 
         onComplete(new IndexOperationEventArgs(this, (int)totalResults));
     }
@@ -176,7 +117,7 @@ public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex
     protected override void PerformDeleteFromIndex(IEnumerable<string> itemIds,
         Action<IndexOperationEventArgs> onComplete)
     {
-        long totalResults =elasticSearchService.DeleteBatch(name,itemIds);
+        long totalResults = elasticSearchService.DeleteBatch(name, itemIds);
 
         onComplete(new IndexOperationEventArgs(this, (int)totalResults));
     }
@@ -184,7 +125,7 @@ public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex
 
     public override void CreateIndex()
     {
-        elasticSearchService.EnsuredIndexExists(name,true);
+        elasticSearchService.EnsuredIndexExists(name, (descriptor) => CreateFieldsMapping(descriptor, FieldDefinitions), true);
     }
 
     public override bool IndexExists()

@@ -13,11 +13,11 @@ public class UmbracoElasticSearchServiceDecorator(IElasticsearchService elastics
 
     public bool IndexExists(string examineIndexName) => elasticsearchService.IndexExists(examineIndexName);
     public IEnumerable<string>? GetCurrentIndexNames(string examineIndexName) => elasticsearchService.GetCurrentIndexNames(examineIndexName);
-    public void EnsuredIndexExists(string examineIndexName, bool overrideExisting = false)
+    public void EnsuredIndexExists(string examineIndexName, Func<PropertiesDescriptor<ElasticDocument>, PropertiesDescriptor<ElasticDocument>> fieldsMapping, bool overrideExisting = false)
     {
         if (serverRoleAccessor.CurrentServerRole == ServerRole.SchedulingPublisher || serverRoleAccessor.CurrentServerRole == ServerRole.Single)
         {
-            elasticsearchService.EnsuredIndexExists(examineIndexName, overrideExisting);
+            elasticsearchService.EnsuredIndexExists(examineIndexName,fieldsMapping, overrideExisting);
         }
         else
         {
@@ -27,11 +27,11 @@ public class UmbracoElasticSearchServiceDecorator(IElasticsearchService elastics
             }
         }
     }
-    public void CreateIndex(string examineIndexName)
+    public void CreateIndex(string examineIndexName, Func<PropertiesDescriptor<ElasticDocument>, PropertiesDescriptor<ElasticDocument>> fieldsMapping)
     {
         if (serverRoleAccessor.CurrentServerRole == ServerRole.SchedulingPublisher || serverRoleAccessor.CurrentServerRole == ServerRole.Single)
         {
-            elasticsearchService.CreateIndex(examineIndexName);
+            elasticsearchService.CreateIndex(examineIndexName,fieldsMapping);
         }
     }
     public Properties? GetProperties(string examineIndexName) => elasticsearchService.GetProperties(examineIndexName);

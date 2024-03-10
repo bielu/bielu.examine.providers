@@ -1,9 +1,11 @@
 ﻿using Bielu.Examine.Elasticsearch.Configuration;
 using Bielu.Examine.Elasticsearch.Indexers;
+using Bielu.Examine.Elasticsearch.Model;
 using Bielu.Examine.Elasticsearch.Queries;
 using Bielu.Examine.Elasticsearch.Services;
 using Bielu.Examine.Elasticsearch.Umbraco.Indexers;
 using Examine;
+using Examine.Lucene;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -22,6 +24,8 @@ public static class UmbracoBuilderExtensions
         services.AddSingleton<IBackOfficeExamineSearcher, BackOfficeExamineSearcher>();
         services.AddSingleton<IIndexDiagnosticsFactory, LuceneIndexDiagnosticsFactory>();
         services.AddSingleton<IElasticSearchClientFactory, ElasticSearchClientFactory>();
+        services.AddSingleton<IElasticsearchService, ElasticsearchService>();
+        services.AddSingleton<IIndexStateService, IndexStateService>();
         services.AddExamineElasticSearchIndex<UmbracoContentElasticsearchIndex>(global::Umbraco.Cms.Core.Constants.UmbracoIndexes
             .InternalIndexName);
         services.AddExamineElasticSearchIndex<UmbracoContentElasticsearchIndex>(global::Umbraco.Cms.Core.Constants.UmbracoIndexes
@@ -33,16 +37,19 @@ public static class UmbracoBuilderExtensions
         services.AddSingleton<IExamineManager, ExamineManager<IElasticSearchExamineIndex>>();
         return umbracoBuilder;
     }
-    public static IServiceCollection AddExamineElasticSearchIndex<TIndex>(this IServiceCollection serviceCollection,string name) where TIndex : class, IElasticSearchExamineIndex
+    public static IServiceCollection AddExamineElasticSearchIndex<TIndex>(this IServiceCollection serviceCollection, string name) where TIndex : class, IElasticSearchExamineIndex
     {
         return serviceCollection.AddSingleton<IIndex>(services =>
         {
-            IElasticSearchClientFactory factory = services.GetRequiredService<IElasticSearchClientFactory>();
             IRuntime runtime = services.GetRequiredService<IRuntime>();
             ILogger<ElasticSearchUmbracoIndex> logger = services.GetRequiredService<ILogger<ElasticSearchUmbracoIndex>>();
-            IOptionsMonitor<IndexOptions> indexOptions = services.GetRequiredService<IOptionsMonitor<IndexOptions>>();
+            ILoggerFactory loggerFactory = services.GetRequiredService<ILoggerFactory>();
+            IIndexStateService stateService = services.GetRequiredService<IIndexStateService>();
+            IElasticsearchService elasticsearchService = services.GetRequiredService<IElasticsearchService>();
+
+            IOptionsMonitor<LuceneDirectoryIndexOptions> indexOptions = services.GetRequiredService<IOptionsMonitor<LuceneDirectoryIndexOptions>>();
             IOptionsMonitor<BieluExamineElasticOptions> examineElasticOptions = services.GetRequiredService<IOptionsMonitor<BieluExamineElasticOptions>>();
-            return (TIndex) ActivatorUtilities.CreateInstance<TIndex>(services, (object) name, (object) factory,runtime, logger,indexOptions,examineElasticOptions);
+            return (TIndex)ActivatorUtilities.CreateInstance<TIndex>(services, (object)name, (object)loggerFactory, runtime, logger, elasticsearchService, stateService, indexOptions, examineElasticOptions);
         });
     }
 }

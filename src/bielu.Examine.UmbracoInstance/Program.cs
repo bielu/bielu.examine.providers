@@ -1,3 +1,5 @@
+using Bielu.Examine.Elasticsearch.Umbraco.Composer;
+
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.CreateUmbracoBuilder()
@@ -5,6 +7,7 @@ builder.CreateUmbracoBuilder()
     .AddWebsite()
     .AddDeliveryApi()
     .AddComposers()
+    .AddElasticSearchExamineProvider()
     .Build();
 
 WebApplication app = builder.Build();

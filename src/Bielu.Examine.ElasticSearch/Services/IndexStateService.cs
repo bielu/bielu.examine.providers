@@ -13,11 +13,17 @@ public class IndexStateService(IOptionsMonitor<BieluExamineElasticOptions> exami
         {
             return state;
         }
-        var configuration = examineElasticOptions.CurrentValue.IndexConfigurations.FirstOrDefault(x => x.Name.Equals(indexName, StringComparison.OrdinalIgnoreCase));
+        var elasticConfig = examineElasticOptions.CurrentValue;
+        var configuration = elasticConfig.IndexConfigurations.FirstOrDefault(x => x.Name.Equals(indexName, StringComparison.OrdinalIgnoreCase));
         state = new ExamineIndexState();
         state.IndexName = indexName;
-        state.IndexAlias = $"{configuration.Prefix.ToLowerInvariant()}_{indexName.ToLowerInvariant()}";
-        state.TempIndexAliast = $"{configuration.Prefix.ToLowerInvariant()}_temp_{indexName.ToLowerInvariant()}";
+        var prefix=(configuration?.Prefix?.ToLowerInvariant() ?? elasticConfig.DefaultIndexConfiguration?.Prefix)?.ToLowerInvariant();
+        if (!string.IsNullOrWhiteSpace(prefix))
+        {
+            prefix += "_";
+        }
+        state.IndexAlias = $"{prefix}{indexName.ToLowerInvariant()}";
+        state.TempIndexAlias = $"{prefix}temp_{indexName.ToLowerInvariant()}";
         _indexStates[indexName] = state;
         return state;
     }

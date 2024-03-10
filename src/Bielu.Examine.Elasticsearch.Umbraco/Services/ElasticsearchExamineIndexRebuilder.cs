@@ -232,6 +232,15 @@ public class ElasticsearchExamineIndexRebuilder :IIndexRebuilder
  #pragma warning restore CA1848
                     }
                 }
+                foreach (IIndex index in indexes)
+                {
+                    if (index is IElasticSearchExamineIndex elasticIndex)
+                    {
+                        elasticIndex.SwapIndex();
+                    }
+                }
+
+
             }
         }
         finally

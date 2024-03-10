@@ -10,7 +10,15 @@ using Umbraco.Forms.Examine.Indexes;
 
 namespace Bielu.Examine.ElasticSearch.Umbraco.Form.Indexer;
 
-public class UmbracoFormsElasticIndex(string? name, ILoggerFactory loggerFactory,  IRuntime runtime, ILogger<ElasticSearchUmbracoIndex> logger, IElasticsearchService elasticSearchService, IIndexStateService stateService,  IOptionsMonitor<LuceneDirectoryIndexOptions> indexOptions, IOptionsMonitor<BieluExamineElasticOptions> examineElasticOptions) : ElasticSearchUmbracoIndex(name, loggerFactory,runtime, logger,elasticSearchService,stateService, indexOptions, examineElasticOptions),IUmbracoFormsRecordIndex
+public class UmbracoFormsElasticIndex(string? name,
+    ILoggerFactory loggerFactory,
+    IRuntime runtime,
+    ILogger<ElasticSearchUmbracoIndex> logger,
+    IElasticsearchService elasticSearchService,
+    IIndexStateService stateService,
+    IOptionsMonitor<LuceneDirectoryIndexOptions> indexOptions,
+    IOptionsMonitor<BieluExamineElasticOptions> examineElasticOptions)
+    : ElasticSearchUmbracoIndex(name, loggerFactory,runtime, logger,elasticSearchService,stateService, indexOptions, examineElasticOptions),IUmbracoFormsRecordIndex
 {
 
 }

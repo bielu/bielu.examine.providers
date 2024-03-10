@@ -10,8 +10,8 @@ public interface IElasticsearchService
 {
     public bool IndexExists(string examineIndexName);
     public IEnumerable<string>? GetCurrentIndexNames(string examineIndexName);
-    public void EnsuredIndexExists(string examineIndexName, bool overrideExisting = false);
-    public void CreateIndex(string examineIndexName);
+    public void EnsuredIndexExists(string examineIndexName, Func<PropertiesDescriptor<ElasticDocument>, PropertiesDescriptor<ElasticDocument>> fieldsMapping, bool overrideExisting = false);
+    public void CreateIndex(string examineIndexName,Func<PropertiesDescriptor<ElasticDocument>, PropertiesDescriptor<ElasticDocument>> fieldsMapping);
     Properties? GetProperties(string examineIndexName);
     ElasticSearchSearchResults Search(string examineIndexName,SearchRequestDescriptor<ElasticDocument> searchDescriptor);
     ElasticSearchSearchResults Search(string examineIndexName, SearchRequest<Document> searchDescriptor);
