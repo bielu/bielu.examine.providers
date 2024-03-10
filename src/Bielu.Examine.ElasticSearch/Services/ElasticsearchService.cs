@@ -50,6 +50,8 @@ public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexSta
         }
         else
         {
+            var state = service.GetIndexState(examineIndexName);
+            state.Reindexing = true;
             CreateIndex(examineIndexName, fieldsMapping);
         }
     }
@@ -142,11 +144,21 @@ public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexSta
     {
         var client = GetClient(examineIndexName);
         var state = service.GetIndexState(examineIndexName);
-        var bulkAliasResponse = client.Indices.UpdateAliases(x => x.Actions(a => a.Add(add => add.Index(state.CurrentTemporaryIndexName).Alias(state.TempIndexAlias))));
+        var oldIndexes = GetIndexesAssignedToAlias(client, state.IndexAlias);
+        var bulkAliasResponse = client.Indices.UpdateAliases(x => x.Actions(a => a.Add(add => add.Index(state.CurrentTemporaryIndexName).Alias(state.IndexAlias))));
         state.CurrentIndexName = state.CurrentTemporaryIndexName;
         state.CurrentTemporaryIndexName = null;
         state.Reindexing = false;
         state.CreatingNewIndex = false;
+        foreach (var index in oldIndexes)
+        {
+            if (state.CurrentIndexName == index)
+            {
+                continue;
+            }
+            client.Indices.Delete(index);
+        }
+        client.Indices.DeleteAlias(state.CurrentIndexName, state.TempIndexAlias);
     }
     public long IndexBatch(string? examineIndexName, IEnumerable<ValueSet> values)
     {
@@ -166,7 +178,18 @@ public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexSta
         totalResults += indexResult.Items.Count;
         return totalResults;
     }
-    public long DeleteBatch(string? examineIndexName, IEnumerable<string> itemIds) => throw new NotImplementedException();
+    public long DeleteBatch(string? examineIndexName, IEnumerable<string> itemIds)
+    {
+        var client = GetClient(examineIndexName);
+        var state = service.GetIndexState(examineIndexName);
+        var descriptor = new BulkRequestDescriptor();
+        foreach (var id in itemIds)
+        {
+            descriptor.Delete(id, index => index.Index(state.CurrentIndexName));
+        }
+        client.Bulk(descriptor);
+        return itemIds.Count();
+    }
     public int GetDocumentCount(string? examineIndexName)
     {
         var client = GetClient(examineIndexName);
