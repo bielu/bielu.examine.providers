@@ -31,13 +31,12 @@ internal sealed class Program
 
     private static async Task Execute(Options options)
     {
-        Console.WriteLine("Schema generator v {0}", typeof(SchemaGeneratorService).Assembly.GetName().Version.ToString());
-
+        Console.WriteLine("Schema generator v {0}", typeof(SchemaGeneratorService).Assembly.GetName().Version?.ToString());
 
         var schemaGenerator = new SchemaGeneratorService(new SchemaGenerator.Build.Services.SchemaGenerator(), options);
         schemaGenerator.GenerateSchema(_assemblies);
 
-        Console.WriteLine("Schema generator v {0}", typeof(SchemaGeneratorService).Assembly.GetName().Version.ToString());
+        Console.WriteLine("Schema generator v {0}", typeof(SchemaGeneratorService).Assembly.GetName().Version?.ToString());
 
     }
 }

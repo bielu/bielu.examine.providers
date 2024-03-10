@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using Bielu.Examine.Core.Extensions;
 using Bielu.Examine.Elasticsearch.Configuration;
 using Bielu.Examine.Elasticsearch.Helpers;
 using Bielu.Examine.Elasticsearch.Model;
@@ -8,72 +9,52 @@ using Elastic.Clients.Elasticsearch;
 using Elastic.Clients.Elasticsearch.IndexManagement;
 using Elastic.Clients.Elasticsearch.Mapping;
 using Examine;
+using Examine.Lucene;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using IndexOptions = Examine.IndexOptions;
 
 namespace Bielu.Examine.Elasticsearch.Indexers;
 
-public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex> logger, ILoggerFactory loggerFactory, IElasticSearchClientFactory factory, IOptionsMonitor<IndexOptions> indexOptions, IOptionsMonitor<BieluExamineElasticOptions> examineElasticOptions) : BaseIndexProvider(loggerFactory, name, indexOptions),IElasticSearchExamineIndex, IDisposable
+public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex> logger, ILoggerFactory loggerFactory, IElasticsearchService elasticSearchService, IIndexStateService indexStateService, IOptionsMonitor<LuceneDirectoryIndexOptions> indexOptions, IOptionsMonitor<BieluExamineElasticOptions> examineElasticOptions) : BaseIndexProvider(loggerFactory, name, indexOptions), IElasticSearchExamineIndex, IDisposable
 {
     private bool? _exists;
-    public string? CurrentIndexName { get; set; } = string.Empty;
-    private bool _isReindexing;
-    private bool _isCreatingNewIndex;
+    private ExamineIndexState IndexState => indexStateService.GetIndexState(name);
     private static readonly object _existsLocker = new object();
     public string? ElasticUrl { get; set; }
-    public  string? ElasticId => examineElasticOptions.CurrentValue.IndexConfigurations.FirstOrDefault(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase))?.AuthenticationDetails?.Id ?? examineElasticOptions.CurrentValue.DefaultIndexConfiguration.AuthenticationDetails?.Id;
-    public ElasticsearchClient Client => factory.GetOrCreateClient(name);
+    public string? ElasticId => examineElasticOptions.CurrentValue.IndexConfigurations.FirstOrDefault(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase))?.AuthenticationDetails?.Id ?? examineElasticOptions.CurrentValue.DefaultIndexConfiguration.AuthenticationDetails?.Id;
 
     /// <summary>
     /// Occurs when [document writing].
     /// </summary>
     public event EventHandler<Events.DocumentWritingEventArgs> DocumentWriting;
 
-    public string? IndexName { get { return $"{Prefix}{name}"; } }
+    public string? IndexName => IndexState.IndexName;
     private IndexConfiguration? IndexConfiguration => examineElasticOptions.CurrentValue.IndexConfigurations.FirstOrDefault(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) ?? new IndexConfiguration()
     {
         Name = name.ToLowerInvariant()
     };
-    private string Prefix => IndexConfiguration.Prefix;
 
 
-    public string? IndexAlias { get { return name.ToLowerInvariant(); } }
-    private string? TempindexAlias { get { return name+"Temp".ToLowerInvariant(); } }
+    public string? IndexAlias => IndexState.IndexAlias;
+    private string? TempindexAlias => IndexState.TempIndexAlias;
     public string? Analyzer { get; }
 
 
-    protected virtual void FromExamineType(PropertiesDescriptor<ElasticDocument> descriptor, FieldDefinition field)
+    protected virtual void FromExamineType(ref PropertiesDescriptor<ElasticDocument> descriptor, FieldDefinition field)
     {
-
-        switch (field.Type.ToLowerInvariant())
+        var fieldType = field.Type.ToLowerInvariant();
+        var fieldName = field.Name.FormatFieldName();
+        descriptor = fieldType switch
         {
-            case "date":
-            case "datetimeoffset":
-            case "datetime":
-                descriptor.Date(s => field.Name);
-                break;
-            case "double":
-                descriptor.DoubleNumber(s => field.Name);
-                break;
-            case "float":
-                descriptor.FloatNumber(s => field.Name);
-                break;
-
-            case "long":
-                descriptor.LongNumber(s => field.Name);
-                break;
-            case "int":
-            case "number":
-                descriptor.IntegerNumber(s => field.Name);
-                break;
-            case "raw":
-                descriptor.Keyword(s => field.Name);
-                break;
-            default:
-                descriptor.Text(s => field.Name, configure => configure.Analyzer(FromLuceneAnalyzer(Analyzer)));
-                break;
-        }
+            var type when _dateFormats.Contains(type) => descriptor.Date(fieldName),
+            "double" => descriptor.DoubleNumber(fieldName),
+            "float" => descriptor.FloatNumber(fieldName),
+            "long" => descriptor.LongNumber(fieldName),
+            var type when _integerFormats.Contains(type) => descriptor.IntegerNumber(fieldName),
+            "raw" => descriptor.Keyword(fieldName),
+            _ => descriptor.Text(fieldName, configure => configure.Analyzer(FromLuceneAnalyzer(Analyzer)))
+        };
     }
 
     protected virtual void OnDocumentWriting(Events.DocumentWritingEventArgs docArgs)
@@ -83,265 +64,91 @@ public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex
 
     private static string FromLuceneAnalyzer(string? analyzer)
     {
-        if (string.IsNullOrEmpty(analyzer) || !analyzer.Contains(','))
-            return "simple";
-
-        //if it contains a comma, we'll assume it's an assembly typed name
-
-
-        if (analyzer.Contains("StandardAnalyzer"))
-            return "standard";
-        if (analyzer.Contains("WhitespaceAnalyzer"))
-            return "whitespace";
-        if (analyzer.Contains("SimpleAnalyzer"))
-            return "simple";
-        if (analyzer.Contains("KeywordAnalyzer"))
-            return "keyword";
-        if (analyzer.Contains("StopAnalyzer"))
-            return "stop";
-        if (analyzer.Contains("ArabicAnalyzer"))
-            return "arabic";
-
-        if (analyzer.Contains("BrazilianAnalyzer"))
-            return "brazilian";
-
-        if (analyzer.Contains("ChineseAnalyzer"))
-            return "chinese";
-
-        if (analyzer.Contains("CJKAnalyzer"))
-            return "cjk";
-
-        if (analyzer.Contains("CzechAnalyzer"))
-            return "czech";
-
-        if (analyzer.Contains("DutchAnalyzer"))
-            return "dutch";
-
-        if (analyzer.Contains("FrenchAnalyzer"))
-            return "french";
-
-        if (analyzer.Contains("GermanAnalyzer"))
-            return "german";
-
-        if (analyzer.Contains("RussianAnalyzer"))
-            return "russian";
-        if (analyzer.Contains("StopAnalyzer"))
-            return "stop";
-        //if the above fails, return standard
-        return "simple";
-    }
-
-    public void EnsureIndex(bool forceOverwrite)
-    {
-        if (!forceOverwrite && _exists.HasValue && _exists.Value) {return;}
-
-        var indexExists = IndexExists();
-        if (indexExists && !forceOverwrite) return;
-        if (TempIndexExists() && !_isReindexing) return;
-        CreateNewIndex(indexExists);
-    }
-    private string _currentSuffix = string.Empty;
-    private string PrepareIndexName()
-    {
-        if(_currentSuffix == string.Empty)
+        return analyzer switch
         {
-            _currentSuffix = DateTime.Now.ToString("yyyyMMddHHmmss",CultureInfo.InvariantCulture);
-        }
-        return $"{IndexName}{_currentSuffix}".ToLowerInvariant();
-    }
-    private void CreateNewIndex(bool indexExists)
-    {
-        if (_isCreatingNewIndex)
-        {
-            return;
-        }
-        lock (_existsLocker)
-        {
-            _isCreatingNewIndex = true;
-            var indexes = GetIndexAssignedToTempAlias().ToArray();
-            if (indexes.Length != 0)
-            {
-                Client.Indices.Delete((Indices)indexes);
-
-            }
-            _currentSuffix = DateTime.Now.ToString("yyyyMMddHHmmss",CultureInfo.InvariantCulture);
-            var currentIndexName = PrepareIndexName();
-            var index = Client.Indices.Create(currentIndexName, c => c
-                .Mappings(ms => ms.Dynamic(DynamicMapping.Runtime)
-                    .Properties<ElasticDocument>(descriptor => CreateFieldsMapping(descriptor,FieldDefinitions ))
-                )
-            );
-            var aliasExists = Client.Indices.Exists(IndexAlias).Exists;
-
-            var indexesMappedToAlias = aliasExists
-                ? GetIndexAssignedToAlias().ToList()
-                : new List<String>();
-            if (!aliasExists)
-            {
-                var createAlias = Client.Indices.PutAlias(currentIndexName, IndexAlias);
-
-            }
-           else if (!indexExists || ( indexesMappedToAlias?.Count == 0))
-            {
-                var bulkAliasResponse = Client.Indices.UpdateAliases(x => x.Actions(a => a.Add(add => add.Index(IndexName).Alias(IndexAlias))));
-
-            }
-            else
-            {
-                _isReindexing = true;
-                var bulkAliasResponse = Client.Indices.UpdateAliases(x => x.Actions(a => a.Add(add => add.Index(IndexName).Alias(TempindexAlias))));
-            }
-            CleanOldIndexes();
-            _isCreatingNewIndex = false;
-            CurrentIndexName = currentIndexName;
-            _exists = true;
-        }
-    }
-    private static void CleanOldIndexes()
-    {
-        //todo: implement
+            null or "" => "simple",
+            _ when !analyzer.Contains(',') => "simple",
+            _ when analyzer.Contains("StandardAnalyzer") => "standard",
+            _ when analyzer.Contains("WhitespaceAnalyzer") => "whitespace",
+            _ when analyzer.Contains("SimpleAnalyzer") => "simple",
+            _ when analyzer.Contains("KeywordAnalyzer") => "keyword",
+            _ when analyzer.Contains("StopAnalyzer") => "stop",
+            _ when analyzer.Contains("ArabicAnalyzer") => "arabic",
+            _ when analyzer.Contains("BrazilianAnalyzer") => "brazilian",
+            _ when analyzer.Contains("ChineseAnalyzer") => "chinese",
+            _ when analyzer.Contains("CJKAnalyzer") => "cjk",
+            _ when analyzer.Contains("CzechAnalyzer") => "czech",
+            _ when analyzer.Contains("DutchAnalyzer") => "dutch",
+            _ when analyzer.Contains("FrenchAnalyzer") => "french",
+            _ when analyzer.Contains("GermanAnalyzer") => "german",
+            _ when analyzer.Contains("RussianAnalyzer") => "russian",
+            _ => "simple"
+        };
     }
     public virtual PropertiesDescriptor<ElasticDocument> CreateFieldsMapping(PropertiesDescriptor<ElasticDocument> descriptor,
         ReadOnlyFieldDefinitionCollection fieldDefinitionCollection)
     {
 
         descriptor.Keyword(s => "Id");
-        descriptor.Keyword(s => FormatFieldName(ExamineFieldNames.ItemIdFieldName));
-        descriptor.Keyword(s => FormatFieldName(ExamineFieldNames.ItemTypeFieldName));
-        descriptor.Keyword(s => FormatFieldName(ExamineFieldNames.CategoryFieldName));
+        descriptor.Keyword(s => ExamineFieldNames.ItemIdFieldName.FormatFieldName());
+        descriptor.Keyword(s => ExamineFieldNames.ItemTypeFieldName.FormatFieldName());
+        descriptor.Keyword(s => ExamineFieldNames.CategoryFieldName.FormatFieldName());
 
         foreach (FieldDefinition field in fieldDefinitionCollection)
         {
-            FromExamineType(descriptor, field);
+            FromExamineType(ref descriptor, field);
         }
 
         return descriptor;
     }
     private ElasticsearchExamineSearcher CreateSearcher()
     {
-        return new ElasticsearchExamineSearcher(Name, IndexAlias, LoggerFactory, factory, examineElasticOptions);
+        return new ElasticsearchExamineSearcher(Name, IndexAlias, LoggerFactory, elasticSearchService);
     }
 
-    private ElasticsearchClient GetIndexClient()
-    {
-        return factory.GetOrCreateClient(IndexName);
-    }
 
-    public static string FormatFieldName(string fieldName)
-    {
-        return $"{fieldName.Replace(".", "_")}";
-    }
-
-    private BulkRequestDescriptor ToElasticSearchDocs(IEnumerable<ValueSet> docs, string? indexTarget)
-    {
-        var descriptor = new BulkRequestDescriptor();
-
-
-        foreach (var d in docs)
-        {
-            try
-            {
-                var indexingNodeDataArgs = new IndexingItemEventArgs(this, d);
-                OnTransformingIndexValues(indexingNodeDataArgs);
-
-                if (!indexingNodeDataArgs.Cancel)
-                {
-                    //this is just a dictionary
-                    var ad = new ElasticDocument
-                    {
-                        ["Id"] = d.Id,
-                        [FormatFieldName(ExamineFieldNames.ItemIdFieldName)] = d.Id,
-                        [FormatFieldName(ExamineFieldNames.ItemTypeFieldName)] = d.ItemType,
-                        [FormatFieldName(ExamineFieldNames.CategoryFieldName)] = d.Category
-                    };
-
-                    foreach (var i in d.Values)
-                    {
-                        if (i.Value.Count > 0)
-                            ad[FormatFieldName(i.Key)] = i.Value.Count == 1 ? i.Value[0] : i.Value;
-                    }
-
-                    var docArgs = new Events.DocumentWritingEventArgs(d, ad);
-                    OnDocumentWriting(docArgs);
-                    descriptor.Index<ElasticDocument>(ad, indexingNodeDataArgs => indexingNodeDataArgs.Index(indexTarget).Id(ad["Id"].ToString()));
-                }
-            }
-            catch (Exception e)
-            {
- #pragma warning disable CA1848
-                logger.LogError(e, "Failed to index document {NodeID}", d.Id);
- #pragma warning restore CA1848
-            }
-        }
-
-        return descriptor;
-    }
-    private IList<string> GetIndexAssignedToAlias()
-    {
-        return Client.GetIndexesAssignedToAlias(IndexAlias);
-    }
-    private IList<string> GetIndexAssignedToTempAlias()
-    {
-        return Client.GetIndexesAssignedToAlias(TempindexAlias);
-    }
     protected override void PerformIndexItems(IEnumerable<ValueSet> values, Action<IndexOperationEventArgs> onComplete)
     {
-        var aliasExists = Client.IndexExists(IndexAlias);
-        var indexesMappedToAlias = aliasExists
-            ? GetIndexAssignedToAlias()
-            : new List<String>();
-        EnsureIndex(false);
+        long totalResults = elasticSearchService.IndexBatch(name, values);
 
-        var indexTarget = _isReindexing ? TempindexAlias : CurrentIndexName;
-        var indexer = GetIndexClient();
-        var totalResults = 0;
-        var batch = ToElasticSearchDocs(values, indexTarget);
-        var indexResult = indexer.Bulk(batch);
-        totalResults += indexResult.Items.Count;
-
-
-        if (_isReindexing)
-        {
-            indexer.Indices.UpdateAliases(ba => ba
-                .Actions(remove => remove.Remove(removeAction => removeAction.Alias(IndexAlias))
-                    .Add(add => add.Index(IndexName).Alias(IndexAlias))));
-
-
-            indexesMappedToAlias.Where(e => e != IndexName).ToList()
-                .ForEach(e => Client.Indices.Delete(new DeleteIndexRequest(e)));
-        }
-
-
-        onComplete(new IndexOperationEventArgs(this, totalResults));
+        onComplete(new IndexOperationEventArgs(this, (int)totalResults));
     }
 
     protected override void PerformDeleteFromIndex(IEnumerable<string> itemIds,
         Action<IndexOperationEventArgs> onComplete)
     {
+        long totalResults = elasticSearchService.DeleteBatch(name, itemIds);
 
+        onComplete(new IndexOperationEventArgs(this, (int)totalResults));
     }
 
 
     public override void CreateIndex()
     {
-        EnsureIndex(true);
+        elasticSearchService.EnsuredIndexExists(name, (descriptor) => CreateFieldsMapping(descriptor, FieldDefinitions), true);
     }
 
     public override bool IndexExists()
     {
-        _exists = Client.IndexExists(IndexAlias);
-        if(_exists.Value)
+        if (_exists.HasValue)
         {
-            CurrentIndexName = Client.GetIndexesAssignedToAlias(IndexAlias).FirstOrDefault();
+            return _exists.Value;
+        }
+        if (elasticSearchService.IndexExists(IndexName))
+        {
+            _exists = true;
+        }
+        else
+        {
+            _exists = false;
         }
         return _exists.Value;
     }
 
     public override ISearcher Searcher => CreateSearcher();
-
-    public bool TempIndexExists()
+    public void SwapIndex()
     {
-        return Client.Indices.Exists(TempindexAlias).Exists;
+        elasticSearchService.SwapTempIndex(name);
     }
 
     public IEnumerable<string> GetFields() => ((ElasticsearchExamineSearcher)Searcher).AllFields;
@@ -349,12 +156,21 @@ public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex
     #region IIndexDiagnostics
 
     public int DocumentCount =>
-        (int)(IndexExists() ? Client.Count<ElasticDocument>(e => e.Indices(IndexAlias)).Count : 0);
+        (int)(IndexExists() ? elasticSearchService.GetDocumentCount(name) : 0);
 
-    public int FieldCount => IndexExists() ?  GetFields().Count() : 0;
+    public int FieldCount => IndexExists() ? GetFields().Count() : 0;
+
+    private static readonly string[] _dateFormats = new[]
+    {
+        "date", "datetimeoffset", "datetime"
+    };
+    private static readonly string[] _integerFormats = new[]
+    {
+        "int", "number"
+    };
 
     #endregion
- #pragma warning disable CA1816
+#pragma warning disable CA1816
     public void Dispose()
  #pragma warning restore CA1816
     {
