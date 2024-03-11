@@ -25,6 +25,7 @@ public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexSta
             if (indexesMappedToAlias.Count > 0)
             {
                 state.Exist = true;
+                state.CurrentIndexName ??= indexesMappedToAlias.Keys.First().ToString();
 
                 return state.Exist;
             }
