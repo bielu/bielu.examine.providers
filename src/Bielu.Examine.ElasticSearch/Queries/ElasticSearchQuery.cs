@@ -67,8 +67,8 @@ public partial class ElasticSearchQuery(
         {
             SearchRequestDescriptor<ElasticDocument> searchDescriptor = new SearchRequestDescriptor<ElasticDocument>();
             searchDescriptor.Index(indexAliast)
-                .Size(options.Take)
-                .From(options.Skip)
+                .Size(options?.Take ?? 1000)
+                .From(options?.Skip ?? 0)
                 .Query(_queryContainer)
                 .Sort(_sortDescriptor);
             searchResult = elasticsearchService.Search(indexName, searchDescriptor);
