@@ -1,5 +1,8 @@
-﻿using Bielu.Examine.Elasticsearch.Umbraco.DependencyInjection;
+﻿using Bielu.Examine.Elasticsearch.Configuration;
+using Bielu.Examine.Elasticsearch.Services;
+using Bielu.Examine.Elasticsearch.Umbraco.DependencyInjection;
 using Bielu.Examine.ElasticSearch.Umbraco.Form.Indexer;
+using bielu.Examine.Umbraco.Extensions;
 using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.DependencyInjection;
 
@@ -9,6 +12,6 @@ public class ElasticSearchExamineUmbracoFormsComposer : IComposer
 
     public void Compose(IUmbracoBuilder builder)
     {
-        builder.Services.AddExamineElasticSearchIndex<UmbracoFormsElasticIndex>(global::Umbraco.Forms.Core.Constants.ExamineIndex.RecordIndexName);
+        builder.Services.AddBieluExamineIndex<UmbracoFormsElasticIndex,BieluExamineElasticOptions,IIndexStateService,IElasticsearchService>(global::Umbraco.Forms.Core.Constants.ExamineIndex.RecordIndexName);
     }
 }

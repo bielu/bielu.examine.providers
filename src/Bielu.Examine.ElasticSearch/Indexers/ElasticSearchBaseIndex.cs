@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using Bielu.Examine.Core.Extensions;
+using Bielu.Examine.Core.Services;
 using Bielu.Examine.Elasticsearch.Configuration;
 using Bielu.Examine.Elasticsearch.Helpers;
 using Bielu.Examine.Elasticsearch.Model;
@@ -16,7 +17,7 @@ using IndexOptions = Examine.IndexOptions;
 
 namespace Bielu.Examine.Elasticsearch.Indexers;
 
-public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex> logger, ILoggerFactory loggerFactory, IElasticsearchService elasticSearchService, IIndexStateService indexStateService, IOptionsMonitor<LuceneDirectoryIndexOptions> indexOptions, IOptionsMonitor<BieluExamineElasticOptions> examineElasticOptions) : BaseIndexProvider(loggerFactory, name, indexOptions), IElasticSearchExamineIndex, IDisposable
+public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex> logger, ILoggerFactory loggerFactory, IElasticsearchService elasticSearchService, IIndexStateService indexStateService, IOptionsMonitor<LuceneDirectoryIndexOptions> indexOptions, IOptionsMonitor<BieluExamineElasticOptions> examineElasticOptions) : BaseIndexProvider(loggerFactory, name, indexOptions), IBieluExamineIndex, IDisposable
 {
     private bool? _exists;
     private ExamineIndexState IndexState => indexStateService.GetIndexState(name);

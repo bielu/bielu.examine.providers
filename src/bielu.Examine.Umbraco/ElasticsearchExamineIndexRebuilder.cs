@@ -1,4 +1,4 @@
-﻿using Bielu.Examine.Elasticsearch.Indexers;
+﻿using Bielu.Examine.Core.Services;
 using Examine;
 using Microsoft.Extensions.Logging;
 using Umbraco.Cms.Core;
@@ -164,7 +164,7 @@ public class ElasticsearchExamineIndexRebuilder :IIndexRebuilder
 
                     populator.Populate(index);
                 }
-                if (index is IElasticSearchExamineIndex elasticIndex)
+                if (index is IBieluExamineIndex elasticIndex)
                 {
                     elasticIndex.SwapIndex();
                 }
@@ -234,7 +234,7 @@ public class ElasticsearchExamineIndexRebuilder :IIndexRebuilder
                 }
                 foreach (IIndex index in indexes)
                 {
-                    if (index is IElasticSearchExamineIndex elasticIndex)
+                    if (index is IBieluExamineIndex elasticIndex)
                     {
                         elasticIndex.SwapIndex();
                     }

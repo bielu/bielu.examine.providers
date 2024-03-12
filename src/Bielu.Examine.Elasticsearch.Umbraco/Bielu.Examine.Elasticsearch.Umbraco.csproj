@@ -10,6 +10,7 @@
     <ItemGroup>
       <ProjectReference Include="..\Bielu.Examine.Core\Bielu.Examine.Core.csproj" />
       <ProjectReference Include="..\Bielu.Examine.Elasticsearch\Bielu.Examine.Elasticsearch.csproj" />
+      <ProjectReference Include="..\bielu.Examine.Umbraco\bielu.Examine.Umbraco.csproj" />
     </ItemGroup>
 
     <ItemGroup>

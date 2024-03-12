@@ -1,9 +1,11 @@
-﻿using Bielu.Examine.Elasticsearch.Configuration;
+﻿using Bielu.Examine.Core.Services;
+using Bielu.Examine.Elasticsearch.Configuration;
 using Bielu.Examine.Elasticsearch.Indexers;
 using Bielu.Examine.Elasticsearch.Model;
 using Bielu.Examine.Elasticsearch.Queries;
 using Bielu.Examine.Elasticsearch.Services;
 using Bielu.Examine.Elasticsearch.Umbraco.Indexers;
+using bielu.Examine.Umbraco.Extensions;
 using Examine;
 using Examine.Lucene;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,30 +28,16 @@ public static class UmbracoBuilderExtensions
         services.AddSingleton<IElasticSearchClientFactory, ElasticSearchClientFactory>();
         services.AddSingleton<IElasticsearchService, ElasticsearchService>();
         services.AddSingleton<IIndexStateService, IndexStateService>();
-        services.AddExamineElasticSearchIndex<UmbracoContentElasticsearchIndex>(global::Umbraco.Cms.Core.Constants.UmbracoIndexes
+        services.AddBieluExamineIndex<UmbracoContentElasticsearchIndex,BieluExamineElasticOptions,IIndexStateService,IElasticsearchService>(global::Umbraco.Cms.Core.Constants.UmbracoIndexes
             .InternalIndexName);
-        services.AddExamineElasticSearchIndex<UmbracoContentElasticsearchIndex>(global::Umbraco.Cms.Core.Constants.UmbracoIndexes
+        services.AddBieluExamineIndex<UmbracoContentElasticsearchIndex,BieluExamineElasticOptions,IIndexStateService,IElasticsearchService>(global::Umbraco.Cms.Core.Constants.UmbracoIndexes
             .ExternalIndexName);
-        services.AddExamineElasticSearchIndex<UmbracoMemberElasticSearchIndex>(global::Umbraco.Cms.Core.Constants.UmbracoIndexes
+        services.AddBieluExamineIndex<UmbracoContentElasticsearchIndex,BieluExamineElasticOptions,IIndexStateService,IElasticsearchService>(global::Umbraco.Cms.Core.Constants.UmbracoIndexes
             .MembersIndexName);
-        services.AddExamineElasticSearchIndex<UmbracoDeliveryApiContentElasticSearchIndex>(global::Umbraco.Cms.Core.Constants.UmbracoIndexes
+        services.AddBieluExamineIndex<UmbracoDeliveryApiContentElasticSearchIndex,BieluExamineElasticOptions,IIndexStateService,IElasticsearchService>(global::Umbraco.Cms.Core.Constants.UmbracoIndexes
             .DeliveryApiContentIndexName);
-        services.AddSingleton<IExamineManager, ExamineManager<IElasticSearchExamineIndex>>();
+        services.AddSingleton<IExamineManager, ExamineManager<IBieluExamineIndex>>();
         return umbracoBuilder;
     }
-    public static IServiceCollection AddExamineElasticSearchIndex<TIndex>(this IServiceCollection serviceCollection, string name) where TIndex : class, IElasticSearchExamineIndex
-    {
-        return serviceCollection.AddSingleton<IIndex>(services =>
-        {
-            IRuntime runtime = services.GetRequiredService<IRuntime>();
-            ILogger<ElasticSearchUmbracoIndex> logger = services.GetRequiredService<ILogger<ElasticSearchUmbracoIndex>>();
-            ILoggerFactory loggerFactory = services.GetRequiredService<ILoggerFactory>();
-            IIndexStateService stateService = services.GetRequiredService<IIndexStateService>();
-            IElasticsearchService elasticsearchService = services.GetRequiredService<IElasticsearchService>();
 
-            IOptionsMonitor<LuceneDirectoryIndexOptions> indexOptions = services.GetRequiredService<IOptionsMonitor<LuceneDirectoryIndexOptions>>();
-            IOptionsMonitor<BieluExamineElasticOptions> examineElasticOptions = services.GetRequiredService<IOptionsMonitor<BieluExamineElasticOptions>>();
-            return (TIndex)ActivatorUtilities.CreateInstance<TIndex>(services, (object)name, (object)loggerFactory, runtime, logger, elasticsearchService, stateService, indexOptions, examineElasticOptions);
-        });
-    }
 }
