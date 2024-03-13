@@ -1,29 +1,18 @@
-﻿using System.Globalization;
-using Bielu.Examine.Core.Extensions;
+﻿using Bielu.Examine.Core.Extensions;
+using Bielu.Examine.Core.Models;
 using Bielu.Examine.Core.Services;
-using Bielu.Examine.Elasticsearch.Configuration;
-using Bielu.Examine.Elasticsearch.Helpers;
-using Bielu.Examine.Elasticsearch.Model;
-using Bielu.Examine.Elasticsearch.Providers;
-using Bielu.Examine.Elasticsearch.Services;
-using Elastic.Clients.Elasticsearch;
-using Elastic.Clients.Elasticsearch.IndexManagement;
-using Elastic.Clients.Elasticsearch.Mapping;
 using Examine;
 using Examine.Lucene;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using IndexOptions = Examine.IndexOptions;
 
-namespace Bielu.Examine.Elasticsearch.Indexers;
+namespace Bielu.Examine.Core.Indexers;
 
-public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex> logger, ILoggerFactory loggerFactory, IElasticsearchService elasticSearchService, IIndexStateService indexStateService, IOptionsMonitor<LuceneDirectoryIndexOptions> indexOptions, IOptionsMonitor<BieluExamineElasticOptions> examineElasticOptions) : BaseIndexProvider(loggerFactory, name, indexOptions), IBieluExamineIndex, IDisposable
+public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex> logger, ILoggerFactory loggerFactory, IElasticsearchService elasticSearchService, IIndexStateService indexStateService, IOptionsMonitor<LuceneDirectoryIndexOptions> indexOptions) : BaseIndexProvider(loggerFactory, name, indexOptions), IBieluExamineIndex, IDisposable
 {
     private bool? _exists;
     private ExamineIndexState IndexState => indexStateService.GetIndexState(name);
     private static readonly object _existsLocker = new object();
-    public string? ElasticUrl { get; set; }
-    public string? ElasticId => examineElasticOptions.CurrentValue.IndexConfigurations.FirstOrDefault(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase))?.AuthenticationDetails?.Id ?? examineElasticOptions.CurrentValue.DefaultIndexConfiguration.AuthenticationDetails?.Id;
 
     /// <summary>
     /// Occurs when [document writing].
@@ -31,11 +20,6 @@ public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex
     public event EventHandler<Events.DocumentWritingEventArgs> DocumentWriting;
 
     public string? IndexName => IndexState.IndexName;
-    private IndexConfiguration? IndexConfiguration => examineElasticOptions.CurrentValue.IndexConfigurations.FirstOrDefault(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) ?? new IndexConfiguration()
-    {
-        Name = name.ToLowerInvariant()
-    };
-
 
     public string? IndexAlias => IndexState.IndexAlias;
     private string? TempindexAlias => IndexState.TempIndexAlias;

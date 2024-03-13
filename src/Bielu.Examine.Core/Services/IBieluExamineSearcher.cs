@@ -1,6 +1,6 @@
 ﻿using Examine;
 
-namespace Bielu.Examine.Elasticsearch.Queries;
+namespace Bielu.Examine.Core.Services;
 
 public interface IBieluExamineSearcher : ISearcher
 {

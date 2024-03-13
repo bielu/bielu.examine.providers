@@ -1,4 +1,4 @@
-﻿namespace Bielu.Examine.Elasticsearch.Model;
+﻿namespace Bielu.Examine.Core.Models;
 
 public class ExamineIndexState
 {

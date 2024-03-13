@@ -1,37 +1,22 @@
-﻿using System.Text.RegularExpressions;
-using Bielu.Examine.Core.Queries;
+﻿using Bielu.Examine.Core.Models;
 using Bielu.Examine.Core.Regex;
-using Bielu.Examine.Elasticsearch.Extensions;
-using Bielu.Examine.Elasticsearch.Model;
-using Bielu.Examine.Elasticsearch.Providers;
-using Bielu.Examine.Elasticsearch.Services;
-using Elastic.Clients.Elasticsearch;
-using Elastic.Clients.Elasticsearch.Mapping;
-using Elastic.Clients.Elasticsearch.QueryDsl;
-using Elastic.Transport.Extensions;
+using Bielu.Examine.Core.Services;
 using Examine;
 using Examine.Lucene.Indexing;
 using Examine.Lucene.Search;
 using Examine.Search;
 using Lucene.Net.Documents;
-using Lucene.Net.Index;
-using Lucene.Net.QueryParsers.Classic;
 using Lucene.Net.Search;
-using Lucene.Net.Util;
 using Microsoft.Extensions.Logging;
-using FuzzyQuery = Lucene.Net.Search.FuzzyQuery;
-using KeywordAnalyzer = Lucene.Net.Analysis.Core.KeywordAnalyzer;
 using PatternAnalyzer = Lucene.Net.Analysis.Miscellaneous.PatternAnalyzer;
-using Query = Lucene.Net.Search.Query;
-using WildcardQuery = Lucene.Net.Search.WildcardQuery;
 
-namespace Bielu.Examine.Elasticsearch.Queries;
+namespace Bielu.Examine.Core.Queries;
 
 public partial class ElasticSearchQuery(
     string indexName,
     string indexAliast,
     CustomMultiFieldQueryParser queryParser,
-    IElasticsearchService elasticsearchService,
+    ISearchService elasticsearchService,
     ILoggerFactory loggerFactory,
     ILogger<ElasticSearchQuery> logger,
     string category,
@@ -48,9 +33,9 @@ public partial class ElasticSearchQuery(
     private Func<SearchRequestDescriptor<ElasticDocument>, SearchRequest<Document>>? _searchSelector;
     private Action<SortOptionsDescriptor<ElasticDocument>> _sortDescriptor;
     public override ISearchResults Execute(QueryOptions? options) => DoSearch(options);
-    private ElasticSearchSearchResults DoSearch(QueryOptions? options)
+    private BieluExamineSearchResults DoSearch(QueryOptions? options)
     {
-        ElasticSearchSearchResults searchResult;
+        BieluExamineSearchResults searchResult;
         var query = ExtractQuery();
         if (query != null)
         {
@@ -105,7 +90,7 @@ public partial class ElasticSearchQuery(
 
             var fieldsMapping = elasticsearchService.GetProperties(indexName);
 
-            foreach (var valueType in fieldsMapping.Where(e => fields.Contains(e.Key.Name)))
+            foreach (var valueType in fieldsMapping.Where(e => fields.Contains(e.Key)))
             {
 
                 if (FromEngineType(valueType) is IIndexRangeValueType type)
@@ -120,7 +105,7 @@ public partial class ElasticSearchQuery(
                 else
                 {
                     throw new InvalidOperationException(
-                        $"Could not perform a range query on the field {valueType.Key.Name}, it's value type is {valueType.Value.Type}");
+                        $"Could not perform a range query on the field {valueType.Key}, it's value type is {valueType.Value}");
                 }
             }
 
@@ -135,7 +120,7 @@ public partial class ElasticSearchQuery(
 
     public override IEnumerable<string> GetAllProperties()
     {
-        return elasticsearchService.GetProperties(indexName).Where(x => x.Value.Type == "text").Select(x => x.Key.Name);
+        return elasticsearchService.GetProperties(indexName).Where(x => x.Value == "text").Select(x => x.Key);
     }
     public override IIndexFieldValueType FromEngineType<TPropertyName, TProperty>(KeyValuePair<TPropertyName, TProperty> propetyField)
     {

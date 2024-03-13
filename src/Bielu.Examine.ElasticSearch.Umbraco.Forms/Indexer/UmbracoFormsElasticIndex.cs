@@ -1,6 +1,7 @@
-﻿using Bielu.Examine.Elasticsearch.Configuration;
+﻿using Bielu.Examine.Core.Services;
+using Bielu.Examine.Elasticsearch.Configuration;
 using Bielu.Examine.Elasticsearch.Services;
-using Bielu.Examine.Elasticsearch.Umbraco.Indexers;
+using bielu.Examine.Umbraco.Indexers.Indexers;
 using Examine;
 using Examine.Lucene;
 using Microsoft.Extensions.Logging;

@@ -31,9 +31,6 @@
       <ProjectReference Include="..\Bielu.Examine.Core\Bielu.Examine.Core.csproj" />
     </ItemGroup>
     <ItemGroup>
-      <Folder Include="Generated\" />
-    </ItemGroup>
-    <ItemGroup>
       <Compile Remove="Generated\System.Text.RegularExpressions.Generator\**" />
     </ItemGroup>
     <ItemGroup>
@@ -41,6 +38,9 @@
     </ItemGroup>
     <ItemGroup>
       <None Remove="Generated\System.Text.RegularExpressions.Generator\**" />
+    </ItemGroup>
+    <ItemGroup>
+      <Folder Include="Queries\" />
     </ItemGroup>
 
 </Project>

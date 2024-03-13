@@ -7,7 +7,7 @@ using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Infrastructure.Examine;
 using Umbraco.Cms.Infrastructure.HostedServices;
 
-namespace Bielu.Examine.Elasticsearch.Umbraco.Services;
+namespace bielu.Examine.Umbraco;
 
 public class ElasticsearchExamineIndexRebuilder :IIndexRebuilder
 {

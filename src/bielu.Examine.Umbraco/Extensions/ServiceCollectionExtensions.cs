@@ -4,12 +4,17 @@ using Examine.Lucene;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Umbraco.Cms.Core.DependencyInjection;
 using Umbraco.Cms.Core.Services;
 
 namespace bielu.Examine.Umbraco.Extensions;
 
 public static class ServiceCollectionExtensions
 {
+    public static IUmbracoBuilder AddUmbraco(this IUmbracoBuilder builder)
+    {
+
+    }
     public static IServiceCollection AddBieluExamineIndex<TIndex, TExamineOptions, TIndexStateService,TIndexService>(this IServiceCollection serviceCollection, string name) where TIndex : class, IBieluExamineIndex
     {
         return serviceCollection.AddSingleton<IIndex>(services =>

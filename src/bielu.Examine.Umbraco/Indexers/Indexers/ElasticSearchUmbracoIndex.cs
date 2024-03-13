@@ -1,11 +1,6 @@
 ﻿using Bielu.Examine.Core.Extensions;
-using Bielu.Examine.Elasticsearch.Configuration;
-using Bielu.Examine.Elasticsearch.Indexers;
-using Bielu.Examine.Elasticsearch.Model;
-using Bielu.Examine.Elasticsearch.Providers;
-using Bielu.Examine.Elasticsearch.Services;
-using Elastic.Clients.Elasticsearch;
-using Elastic.Clients.Elasticsearch.Mapping;
+using Bielu.Examine.Core.Indexers;
+using Bielu.Examine.Core.Services;
 using Examine;
 using Examine.Lucene;
 using Microsoft.Extensions.Logging;
@@ -15,11 +10,10 @@ using Umbraco.Cms.Core.Logging;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Infrastructure.Examine;
 using Umbraco.Extensions;
-using IndexOptions = Examine.IndexOptions;
 
-namespace Bielu.Examine.Elasticsearch.Umbraco.Indexers
+namespace bielu.Examine.Umbraco.Indexers.Indexers
 {
-    public class ElasticSearchUmbracoIndex(string? name, ILoggerFactory loggerFactory, IRuntime runtime, ILogger<ElasticSearchUmbracoIndex> logger, IElasticsearchService elasticSearchService, IIndexStateService stateService, IOptionsMonitor<LuceneDirectoryIndexOptions> indexOptions, IOptionsMonitor<BieluExamineElasticOptions> examineElasticOptions) : ElasticSearchBaseIndex(name, logger, loggerFactory, elasticSearchService,stateService,indexOptions, examineElasticOptions), IUmbracoIndex, IIndexDiagnostics
+    public class ElasticSearchUmbracoIndex(string? name, ILoggerFactory loggerFactory, IRuntime runtime, ILogger<ElasticSearchUmbracoIndex> logger,IIndexStateService stateService, IOptionsMonitor<LuceneDirectoryIndexOptions> indexOptions) : ElasticSearchBaseIndex(name, logger, loggerFactory, elasticSearchService,stateService,indexOptions, examineElasticOptions), IBieluExamineIndex, IIndexDiagnostics
     {
 
         public const string SpecialFieldPrefix = "__";

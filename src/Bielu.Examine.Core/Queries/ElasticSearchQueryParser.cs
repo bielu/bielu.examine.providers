@@ -2,7 +2,7 @@
 using Lucene.Net.Analysis;
 using Lucene.Net.Util;
 
-namespace Bielu.Examine.Elasticsearch.Queries
+namespace Bielu.Examine.Core.Queries
 {
     public class ElasticSearchQueryParser : CustomMultiFieldQueryParser
     {

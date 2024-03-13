@@ -1,4 +1,5 @@
-﻿using Bielu.Examine.Elasticsearch.Model;
+﻿using Bielu.Examine.Core.Models;
+using Bielu.Examine.Elasticsearch.Model;
 using Bielu.Examine.Elasticsearch.Services;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Clients.Elasticsearch.Mapping;

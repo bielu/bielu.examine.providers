@@ -1,4 +1,6 @@
 ﻿using Bielu.Examine.Core.Extensions;
+using Bielu.Examine.Core.Models;
+using Bielu.Examine.Core.Services;
 using Bielu.Examine.Elasticsearch.Extensions;
 using Bielu.Examine.Elasticsearch.Helpers;
 using Bielu.Examine.Elasticsearch.Model;
@@ -12,7 +14,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Bielu.Examine.Elasticsearch.Services;
 
-public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexStateService service, ILogger<ElasticsearchService> logger) : IElasticsearchService
+public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexStateService service, ILogger<ElasticsearchService> logger) : ISearchService
 {
     public bool IndexExists(string examineIndexName)
     {
@@ -38,6 +40,10 @@ public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexSta
         var state = service.GetIndexState(examineIndexName);
         return GetIndexesAssignedToAlias(GetClient(examineIndexName), state.IndexAlias);
     }
+    public void EnsuredIndexExists(string examineIndexName, Func<object, object> fieldsMapping, bool overrideExisting = false) => throw new NotImplementedException();
+    public void CreateIndex(string examineIndexName, Func<object, object> fieldsMapping) => throw new NotImplementedException();
+    IEnumerable<ExamineProperty>? ISearchService.GetProperties(string examineIndexName) => throw new NotImplementedException();
+    public BieluExamineSearchResults Search(string examineIndexName, object searchDescriptor) => throw new NotImplementedException();
     public void EnsuredIndexExists(string examineIndexName, Func<PropertiesDescriptor<ElasticDocument>, PropertiesDescriptor<ElasticDocument>> fieldsMapping, bool overrideExisting = false)
     {
         if (IndexExists(examineIndexName))

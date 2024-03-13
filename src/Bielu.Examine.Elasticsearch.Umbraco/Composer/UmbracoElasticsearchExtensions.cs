@@ -1,6 +1,7 @@
 ﻿using Bielu.Examine.Core.Extensions;
 using Bielu.Examine.Elasticsearch.Umbraco.DependencyInjection;
 using Bielu.Examine.Elasticsearch.Umbraco.Services;
+using bielu.Examine.Umbraco;
 using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.DependencyInjection;
 using Umbraco.Cms.Infrastructure.Examine;

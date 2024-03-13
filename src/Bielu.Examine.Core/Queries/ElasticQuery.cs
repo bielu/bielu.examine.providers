@@ -2,7 +2,7 @@
 using Examine.Search;
 using Lucene.Net.Search;
 
-namespace Bielu.Examine.Elasticsearch.Queries;
+namespace Bielu.Examine.Core.Queries;
 
 public class ElasticQuery  : IQuery, INestedQuery
 {

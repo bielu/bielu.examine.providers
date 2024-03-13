@@ -24,6 +24,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionsFiles", "Solutions
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bielu.Examine.ElasticSearch.Umbraco.Forms", "Bielu.Examine.ElasticSearch.Umbraco.Forms\Bielu.Examine.ElasticSearch.Umbraco.Forms.csproj", "{3881358D-FA15-44AF-9F32-E2B639771493}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bielu.Examine.AzureSearch", "Bielu.Examine.AzureSearch\Bielu.Examine.AzureSearch.csproj", "{18C4F88B-3F4F-43C3-9220-E578F749AC71}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -62,5 +64,9 @@ Global
 		{3881358D-FA15-44AF-9F32-E2B639771493}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3881358D-FA15-44AF-9F32-E2B639771493}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3881358D-FA15-44AF-9F32-E2B639771493}.Release|Any CPU.Build.0 = Release|Any CPU
+		{18C4F88B-3F4F-43C3-9220-E578F749AC71}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{18C4F88B-3F4F-43C3-9220-E578F749AC71}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{18C4F88B-3F4F-43C3-9220-E578F749AC71}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{18C4F88B-3F4F-43C3-9220-E578F749AC71}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

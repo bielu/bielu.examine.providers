@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using Bielu.Examine.Core.Models;
 using Bielu.Examine.Elasticsearch.Model;
 using Elastic.Clients.Elasticsearch;
 using Examine;
