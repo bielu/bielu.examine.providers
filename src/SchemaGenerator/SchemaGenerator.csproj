@@ -21,8 +21,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Bielu.Examine.AzureSearch\Bielu.Examine.AzureSearch.csproj" />
       <ProjectReference Include="..\Bielu.Examine.Core\Bielu.Examine.Core.csproj" />
       <ProjectReference Include="..\Bielu.Examine.Elasticsearch\Bielu.Examine.Elasticsearch.csproj" />
+      <ProjectReference Include="..\bielu.Examine.OpenSearch\bielu.Examine.OpenSearch.csproj" />
     </ItemGroup>
 
 </Project>

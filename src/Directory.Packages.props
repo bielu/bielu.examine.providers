@@ -4,6 +4,15 @@
     <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
   <ItemGroup>
+    <PackageVersion Include="Azure.Identity">
+      <Version>1.10.4</Version>
+    </PackageVersion>
+    <PackageVersion Include="Azure.ResourceManager">
+      <Version>1.10.2</Version>
+    </PackageVersion>
+    <PackageVersion Include="Azure.Search.Documents">
+      <Version>11.5.1</Version>
+    </PackageVersion>
     <PackageVersion Include="bielu.SchemaGenerator.Build" Version="1.0.1-beta.638420568066212877" />
     <PackageVersion Include="bielu.SchemaGenerator.Core" Version="1.0.1-beta.638420568066212877" />
     <PackageVersion Include="CommandLineParser" Version="2.9.1" />
