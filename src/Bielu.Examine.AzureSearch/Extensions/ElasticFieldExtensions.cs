@@ -1,6 +1,4 @@
-﻿using Elastic.Clients.Elasticsearch.Mapping;
-
-namespace Bielu.Examine.Elasticsearch.Extensions
+﻿namespace Bielu.Examine.Elasticsearch.Extensions
 {
     public static class ElasticFieldExtensions
     {

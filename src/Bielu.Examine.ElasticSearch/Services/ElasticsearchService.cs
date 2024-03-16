@@ -4,7 +4,6 @@ using Bielu.Examine.Core.Queries;
 using Bielu.Examine.Core.Regex;
 using Bielu.Examine.Core.Services;
 using Bielu.Examine.Elasticsearch.Extensions;
-using Bielu.Examine.Elasticsearch.Helpers;
 using Bielu.Examine.Elasticsearch.Model;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Clients.Elasticsearch.IndexManagement;
@@ -61,15 +60,25 @@ public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexSta
             Query = QueryRegex.PathRegex().Replace(query.ToString(), "$1\\-"), AnalyzeWildcard = true
 
         };
-        SearchRequestDescriptor<ElasticDocument> searchDescriptor = new SearchRequestDescriptor<ElasticDocument>();
+        SearchRequestDescriptor<BieluExamineDocument> searchDescriptor = new SearchRequestDescriptor<BieluExamineDocument>();
         searchDescriptor.Index(state.IndexAlias)
             .Size(options?.Take ?? 1000)
             .From(options?.Skip ?? 0)
             .Query(queryContainer);
         return this.Search(examineIndexName, searchDescriptor);
     }
-    public BieluExamineSearchResults Search(string examineIndexName, object searchDescriptor) => throw new NotImplementedException();
-    public BieluExamineSearchResults Search(string examineIndexName, object searchDescriptor, Query query) => throw new NotImplementedException();
+    public BieluExamineSearchResults Search(string examineIndexName, object searchDescriptor)
+    {
+        switch (searchDescriptor)
+        {
+            case SearchRequestDescriptor<BieluExamineDocument> descriptor:
+                return this.Search(examineIndexName, descriptor);
+            case SearchRequest<Document> descriptor:
+                return this.Search(examineIndexName, descriptor);
+            default:
+                throw new NotSupportedException("SearchDescriptor type not supported");
+        }
+    }
     public void EnsuredIndexExists(string examineIndexName, string analyzer, ReadOnlyFieldDefinitionCollection properties, bool overrideExisting = false)
     {
         var fieldsMapping = propertyMappingService.GetElasticSearchMapping(properties, analyzer);
@@ -107,7 +116,7 @@ public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexSta
     {
         return factory.GetOrCreateClient(examineIndexName);
     }
-    public void CreateIndex(string examineIndexName, Func<PropertiesDescriptor<ElasticDocument>, PropertiesDescriptor<ElasticDocument>> fieldsMapping)
+    public void CreateIndex(string examineIndexName, Func<PropertiesDescriptor<BieluExamineDocument>, PropertiesDescriptor<BieluExamineDocument>> fieldsMapping)
     {
         var client = GetClient(examineIndexName);
         var state = service.GetIndexState(examineIndexName);
@@ -129,7 +138,7 @@ public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexSta
         //assigned current indexName
         var index = client.Indices.Create(indexName, c => c
             .Mappings(ms => ms.Dynamic(DynamicMapping.Runtime)
-                .Properties<ElasticDocument>(descriptor =>
+                .Properties<BieluExamineDocument>(descriptor =>
                     fieldsMapping(descriptor)
                 )
             )
@@ -179,18 +188,18 @@ public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexSta
             Key = x.Key.Name, Type = x.Value.Type.ToString()
         }).ToList();
     }
-    public ElasticSearchSearchResults Search(string examineIndexName, SearchRequestDescriptor<ElasticDocument> searchDescriptor)
+    public ElasticSearchSearchResults Search(string examineIndexName, SearchRequestDescriptor<BieluExamineDocument> searchDescriptor)
     {
         var client = GetClient(examineIndexName);
-        SearchResponse<ElasticDocument>
-            searchResult = client.Search<ElasticDocument>(searchDescriptor);
+        SearchResponse<BieluExamineDocument>
+            searchResult = client.Search<BieluExamineDocument>(searchDescriptor);
         return searchResult.ConvertToSearchResults();
     }
-    public ElasticSearchSearchResults Search(string examineIndexName, SearchRequest<Document> searchDescriptor)
+    public ElasticSearchSearchResults Search(string examineIndexName, SearchRequest<BieluExamineDocument> searchDescriptor)
     {
         var client = GetClient(examineIndexName);
-        SearchResponse<ElasticDocument>
-            searchResult = client.Search<ElasticDocument>(searchDescriptor);
+        SearchResponse<BieluExamineDocument>
+            searchResult = client.Search<BieluExamineDocument>(searchDescriptor);
         return searchResult.ConvertToSearchResults();
     }
     public void SwapTempIndex(string? examineIndexName)
@@ -276,7 +285,7 @@ public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexSta
                 if (true)
                 {
                     //this is just a dictionary
-                    var ad = new ElasticDocument
+                    var ad = new BieluExamineDocument
                     {
                         ["Id"] = d.Id,
                         [ExamineFieldNames.ItemIdFieldName.FormatFieldName()] = d.Id,
@@ -292,7 +301,7 @@ public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexSta
 
                     var docArgs = new Events.DocumentWritingEventArgs(d, ad);
                     // OnDocumentWriting(docArgs);
-                    descriptor = descriptor.Index<ElasticDocument>(ad, indexTarget, indexingNodeDataArgs => indexingNodeDataArgs.Index(indexTarget).Id(ad["Id"].ToString()));
+                    descriptor = descriptor.Index<BieluExamineDocument>(ad, indexTarget, indexingNodeDataArgs => indexingNodeDataArgs.Index(indexTarget).Id(ad["Id"].ToString()));
                 }
             }
             catch (Exception e)

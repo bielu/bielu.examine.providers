@@ -3,7 +3,6 @@ using Bielu.Examine.Core.Queries;
 using Bielu.Examine.Core.Services;
 using Bielu.Examine.Elasticsearch.Configuration;
 using Bielu.Examine.Elasticsearch.Extensions;
-using Bielu.Examine.Elasticsearch.Helpers;
 using Bielu.Examine.Elasticsearch.Model;
 using Bielu.Examine.Elasticsearch.Services;
 using Elastic.Clients.Elasticsearch;
@@ -85,9 +84,9 @@ public class ElasticsearchExamineSearcher(string name, string? indexAlias, ILogg
     }
 
     private BieluExamineSearchResults DoSearch(Query query, QueryOptions options,
-        SortOptionsDescriptor<ElasticDocument>? optionsDescriptor = null)
+        SortOptionsDescriptor<BieluExamineDocument>? optionsDescriptor = null)
     {
-        SearchRequestDescriptor<ElasticDocument> searchDescriptor = new SearchRequestDescriptor<ElasticDocument>();
+        SearchRequestDescriptor<BieluExamineDocument> searchDescriptor = new SearchRequestDescriptor<BieluExamineDocument>();
         searchDescriptor.Index(indexAlias)
             .Query(query);
         if (optionsDescriptor != null)
@@ -112,12 +111,7 @@ public class ElasticsearchExamineSearcher(string name, string? indexAlias, ILogg
         }
     }
     public override IQuery CreateQuery(string category = null,
-        BooleanOperation defaultOperation = BooleanOperation.And)
-    {
-        return elasticsearchService.CreateQuery(name, indexAlias, category, defaultOperation);
-
-        return new BieluExamineQuery(name,indexAlias,new ElasticSearchQueryParser(LuceneVersion.LUCENE_CURRENT,ParsedProperties,new StandardAnalyzer(LuceneVersion.LUCENE_48)), elasticsearchService,loggerFactory,loggerFactory.CreateLogger<BieluExamineQuery>() ,category, new LuceneSearchOptions(), defaultOperation );
-    }
+        BooleanOperation defaultOperation = BooleanOperation.And) => elasticsearchService.CreateQuery(name, indexAlias, category, defaultOperation);
  #pragma warning disable CA1816
     public void Dispose() => loggerFactory.Dispose();
  #pragma warning restore CA1816

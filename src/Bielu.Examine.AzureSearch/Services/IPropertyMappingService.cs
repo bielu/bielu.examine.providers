@@ -1,10 +1,10 @@
-﻿using Bielu.Examine.Elasticsearch.Model;
-using Elastic.Clients.Elasticsearch.Mapping;
+﻿using Azure.Search.Documents.Indexes.Models;
+using Bielu.Examine.Elasticsearch.Model;
 using Examine;
 
 namespace Bielu.Examine.Elasticsearch.Services;
 
 public interface IPropertyMappingService
 {
-    Func<PropertiesDescriptor<ElasticDocument>, PropertiesDescriptor<ElasticDocument>>  GetElasticSearchMapping(ReadOnlyFieldDefinitionCollection properties, string analyzer);
+    IEnumerable<SearchFieldTemplate>  GetAzureSearchMapping(ReadOnlyFieldDefinitionCollection properties, string analyzer);
 }

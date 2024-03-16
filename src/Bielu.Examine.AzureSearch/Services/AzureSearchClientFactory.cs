@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 
 namespace Bielu.Examine.Elasticsearch.Services;
 
-public class ElasticSearchClientFactory : IAzureSearchClientFactory
+public class AzureSearchClientFactory : IAzureSearchClientFactory
 {
     public SearchIndexClient GetOrCreateIndexClient(string? indexName) => throw new NotImplementedException();
     public SearchClient GetOrCreateSearchClient(string? indexName) => throw new NotImplementedException();

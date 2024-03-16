@@ -15,6 +15,8 @@ public static class DepedencyInjectionExtension
         configurator.ServiceCollection.AddSingleton<ISearchService, ElasticsearchService>();
         configurator.ServiceCollection.AddSingleton<IIndexStateService, IndexStateService>();
         configurator.ServiceCollection.AddSingleton<IBieluSearchManager, ElasticBieluSearchManager>();
+        configurator.ServiceCollection.AddSingleton<IPropertyMappingService, PropertyMappingService>();
+        configurator.ServiceCollection.AddSingleton<IElasticSearchClientFactory, ElasticSearchClientFactory>();
         return configurator;
     }
 }

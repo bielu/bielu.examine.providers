@@ -6,5 +6,5 @@ namespace Bielu.Examine.Elasticsearch.Services;
 
 public interface IPropertyMappingService
 {
-    Func<PropertiesDescriptor<ElasticDocument>, PropertiesDescriptor<ElasticDocument>>  GetElasticSearchMapping(ReadOnlyFieldDefinitionCollection properties, string analyzer);
+    Func<PropertiesDescriptor<BieluExamineDocument>, PropertiesDescriptor<BieluExamineDocument>>  GetElasticSearchMapping(ReadOnlyFieldDefinitionCollection properties, string analyzer);
 }

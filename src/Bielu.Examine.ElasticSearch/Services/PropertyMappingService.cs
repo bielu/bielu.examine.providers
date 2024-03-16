@@ -17,7 +17,7 @@ public class PropertyMappingService(BieluExamineConfiguration configuration) : I
     {
         "int", "number"
     };
-  protected virtual void FromExamineType(ref PropertiesDescriptor<ElasticDocument> descriptor, FieldDefinition field, string analyzer)
+  protected virtual void FromExamineType(ref PropertiesDescriptor<BieluExamineDocument> descriptor, FieldDefinition field, string analyzer)
     {
         var fieldType = field.Type.ToLowerInvariant();
         var fieldName = field.Name.FormatFieldName();
@@ -56,7 +56,7 @@ public class PropertyMappingService(BieluExamineConfiguration configuration) : I
             _ => "simple"
         };
     }
-    public virtual PropertiesDescriptor<ElasticDocument> CreateFieldsMapping(PropertiesDescriptor<ElasticDocument> descriptor,
+    public virtual PropertiesDescriptor<BieluExamineDocument> CreateFieldsMapping(PropertiesDescriptor<BieluExamineDocument> descriptor,
         ReadOnlyFieldDefinitionCollection fieldDefinitionCollection, string analyzer)
     {
 
@@ -83,5 +83,5 @@ public class PropertyMappingService(BieluExamineConfiguration configuration) : I
 
         return descriptor;
     }
-    public Func<PropertiesDescriptor<ElasticDocument>, PropertiesDescriptor<ElasticDocument>> GetElasticSearchMapping(ReadOnlyFieldDefinitionCollection properties, string analyzer) => (descriptor) => CreateFieldsMapping(descriptor, properties, analyzer);
+    public Func<PropertiesDescriptor<BieluExamineDocument>, PropertiesDescriptor<BieluExamineDocument>> GetElasticSearchMapping(ReadOnlyFieldDefinitionCollection properties, string analyzer) => (descriptor) => CreateFieldsMapping(descriptor, properties, analyzer);
 }

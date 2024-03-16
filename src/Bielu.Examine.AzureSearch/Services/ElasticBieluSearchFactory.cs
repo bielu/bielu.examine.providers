@@ -16,7 +16,7 @@ public class ElasticBieluSearchManager(IIndexStateService stateService, ILoggerF
             return searcher;
         }
         var state = stateService.GetIndexState(indexName);
-        searcher = new ElasticsearchExamineSearcher(indexName, state.IndexAlias, loggerFactory, service);
+        searcher = new AzureSearchExamineSearcher(indexName, state.IndexAlias, loggerFactory, service);
         _searchers.TryAdd(indexName, searcher);
         return searcher;
     }

@@ -4,7 +4,7 @@ using Lucene.Net.Index;
 
 namespace Bielu.Examine.Elasticsearch.Model;
 
-public class ElasticDocument : Dictionary<string, object>
+public class BieluExamineDocument : Dictionary<string, object>
 {
     public Field GetField(string fieldName)
     {

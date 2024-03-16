@@ -1,16 +1,13 @@
-﻿using Bielu.Examine.Core.Extensions;
+﻿using Azure.Search.Documents;
+using Azure.Search.Documents.Indexes;
+using Azure.Search.Documents.Indexes.Models;
+using Bielu.Examine.Core.Extensions;
 using Bielu.Examine.Core.Models;
 using Bielu.Examine.Core.Queries;
 using Bielu.Examine.Core.Regex;
 using Bielu.Examine.Core.Services;
-using Bielu.Examine.Elasticsearch.Extensions;
-using Bielu.Examine.Elasticsearch.Helpers;
 using Bielu.Examine.Elasticsearch.Model;
-using Elastic.Clients.Elasticsearch;
-using Elastic.Clients.Elasticsearch.IndexManagement;
-using Elastic.Clients.Elasticsearch.Mapping;
-using Elastic.Clients.Elasticsearch.QueryDsl;
-using Elastic.Transport.Extensions;
+using Bielu.Examine.Elasticsearch.Services;
 using Examine;
 using Examine.Lucene.Search;
 using Examine.Search;
@@ -20,25 +17,20 @@ using Lucene.Net.Util;
 using Microsoft.Extensions.Logging;
 using Query = Lucene.Net.Search.Query;
 
-namespace Bielu.Examine.Elasticsearch.Services;
+namespace Bielu.Examine.AzureSearch.Services;
 
-public class ElasticsearchService(IAzureSearchClientFactory factory, IIndexStateService service, IPropertyMappingService propertyMappingService, ILogger<ElasticsearchService> logger, ILoggerFactory loggerFactory) : ISearchService
+public class AzureSearchService(IAzureSearchClientFactory factory, IIndexStateService service, IPropertyMappingService propertyMappingService, ILogger<AzureSearchService> logger, ILoggerFactory loggerFactory) : ISearchService
 {
     public bool IndexExists(string examineIndexName)
     {
         var state = service.GetIndexState(examineIndexName);
-        var client = GetClient(examineIndexName);
-        var aliasExists = client.Indices.Exists(state.IndexAlias).Exists;
-        if (aliasExists)
+        var client = GetIndexingClient(examineIndexName);
+        var aliasExists = client.GetAlias(state.IndexAlias).Value;
+        if (aliasExists != null && aliasExists.Indexes.Count > 0)
         {
-            var indexesMappedToAlias = client.Indices.Get(state.IndexAlias).Indices;
-            if (indexesMappedToAlias.Count > 0)
-            {
-                state.Exist = true;
-                state.CurrentIndexName ??= indexesMappedToAlias.Keys.First().ToString();
-
-                return state.Exist;
-            }
+            state.Exist = true;
+            state.CurrentIndexName ??= aliasExists.Indexes[0];
+            return state.Exist;
         }
         state.Exist = false;
         return state.Exist;
@@ -46,21 +38,21 @@ public class ElasticsearchService(IAzureSearchClientFactory factory, IIndexState
     public IEnumerable<string>? GetCurrentIndexNames(string examineIndexName)
     {
         var state = service.GetIndexState(examineIndexName);
-        return GetIndexesAssignedToAlias(GetClient(examineIndexName), state.IndexAlias);
+        return GetIndexesAssignedToAlias(GetSearchClient(examineIndexName), state.IndexAlias);
     }
     public void CreateIndex(string examineIndexName, string analyzer,  ReadOnlyFieldDefinitionCollection properties)
     {
-        var fieldsMapping = propertyMappingService.GetElasticSearchMapping(properties, analyzer);
+        var fieldsMapping = propertyMappingService.GetAzureSearchMapping(properties, analyzer);
         CreateIndex(examineIndexName, fieldsMapping);
     }
     public BieluExamineSearchResults Search(string examineIndexName, QueryOptions? options, Query query)
     {
         var state = service.GetIndexState(examineIndexName);
-        var queryContainer = new QueryStringQuery()
+        var searchOptions=new SearchOptions()
         {
-            Query = QueryRegex.PathRegex().Replace(query.ToString(), "$1\\-"), AnalyzeWildcard = true
-
+            Filter = QueryRegex.PathRegex().Replace(query.ToString(), "$1\\-")
         };
+        var searchResult = GetClient(examineIndexName).Search(searchOptions);
         SearchRequestDescriptor<ElasticDocument> searchDescriptor = new SearchRequestDescriptor<ElasticDocument>();
         searchDescriptor.Index(state.IndexAlias)
             .Size(options?.Take ?? 1000)
@@ -72,7 +64,7 @@ public class ElasticsearchService(IAzureSearchClientFactory factory, IIndexState
     public BieluExamineSearchResults Search(string examineIndexName, object searchDescriptor, Query query) => throw new NotImplementedException();
     public void EnsuredIndexExists(string examineIndexName, string analyzer, ReadOnlyFieldDefinitionCollection properties, bool overrideExisting = false)
     {
-        var fieldsMapping = propertyMappingService.GetElasticSearchMapping(properties, analyzer);
+        var fieldsMapping = propertyMappingService.GetAzureSearchMapping(properties, analyzer);
         if (IndexExists(examineIndexName))
         {
             if (overrideExisting)
@@ -89,9 +81,11 @@ public class ElasticsearchService(IAzureSearchClientFactory factory, IIndexState
             CreateIndex(examineIndexName, fieldsMapping);
         }
     }
-    private static List<string>? GetIndexesAssignedToAlias(ElasticsearchClient client, string? aliasName)
+    private static List<string>? GetIndexesAssignedToAlias(SearchClient client, string? aliasName)
     {
-        var aliasExists = client.Indices.Exists(aliasName).Exists;
+        ArgumentNullException.ThrowIfNull(aliasName);
+
+        var aliasExists = client..Exists(aliasName).Exists;
         if (aliasExists)
         {
             var indexesMappedToAlias = client.Indices.Get(aliasName).Indices;
@@ -103,13 +97,11 @@ public class ElasticsearchService(IAzureSearchClientFactory factory, IIndexState
 
         return new List<string>();
     }
-    private ElasticsearchClient GetClient(string examineIndexName)
+    private SearchClient GetSearchClient(string examineIndexName) => factory.GetOrCreateSearchClient(examineIndexName);
+    private SearchIndexClient GetIndexingClient(string examineIndexName) => factory.GetOrCreateIndexClient(examineIndexName);
+    public void CreateIndex(string examineIndexName, IEnumerable<SearchFieldTemplate> fieldMapping)
     {
-        return factory.GetOrCreateClient(examineIndexName);
-    }
-    public void CreateIndex(string examineIndexName, Func<PropertiesDescriptor<ElasticDocument>, PropertiesDescriptor<ElasticDocument>> fieldsMapping)
-    {
-        var client = GetClient(examineIndexName);
+        var client = GetIndexingClient(examineIndexName);
         var state = service.GetIndexState(examineIndexName);
         if (state.CreatingNewIndex)
         {
@@ -148,7 +140,7 @@ public class ElasticsearchService(IAzureSearchClientFactory factory, IIndexState
     }
     public IEnumerable<string>? GetPropertiesNames(string examineIndexName)
     {
-        var client = GetClient(examineIndexName);
+        var client = GetSearchClient(examineIndexName);
         var state = service.GetIndexState(examineIndexName);
 
         var indexesMappedToAlias = GetIndexesAssignedToAlias(client, state.IndexAlias).ToList();
@@ -163,7 +155,7 @@ public class ElasticsearchService(IAzureSearchClientFactory factory, IIndexState
     }
     public IEnumerable<ExamineProperty>? GetProperties(string examineIndexName)
     {
-        var client = GetClient(examineIndexName);
+        var client = GetSearchClient(examineIndexName);
         var state = service.GetIndexState(examineIndexName);
 
         var indexesMappedToAlias = GetIndexesAssignedToAlias(client, state.IndexAlias).ToList();
@@ -179,14 +171,14 @@ public class ElasticsearchService(IAzureSearchClientFactory factory, IIndexState
             Key = x.Key.Name, Type = x.Value.Type.ToString()
         }).ToList();
     }
-    public ElasticSearchSearchResults Search(string examineIndexName, SearchRequestDescriptor<ElasticDocument> searchDescriptor)
+    public AzureSearchSearchResults Search(string examineIndexName, SearchRequestDescriptor<ElasticDocument> searchDescriptor)
     {
-        var client = GetClient(examineIndexName);
+        var client = GetSearchClient(examineIndexName);
         SearchResponse<ElasticDocument>
             searchResult = client.Search<ElasticDocument>(searchDescriptor);
         return searchResult.ConvertToSearchResults();
     }
-    public ElasticSearchSearchResults Search(string examineIndexName, SearchRequest<Document> searchDescriptor)
+    public AzureSearchSearchResults Search(string examineIndexName, SearchRequest<Document> searchDescriptor)
     {
         var client = GetClient(examineIndexName);
         SearchResponse<ElasticDocument>
@@ -290,7 +282,7 @@ public class ElasticsearchService(IAzureSearchClientFactory factory, IIndexState
                             ad[i.Key.FormatFieldName()] = i.Value.Count == 1 ? i.Value[0] : i.Value;
                     }
 
-                    var docArgs = new Events.DocumentWritingEventArgs(d, ad);
+                    var docArgs = new Elasticsearch.Events.DocumentWritingEventArgs(d, ad);
                     // OnDocumentWriting(docArgs);
                     descriptor = descriptor.Index<ElasticDocument>(ad, indexTarget, indexingNodeDataArgs => indexingNodeDataArgs.Index(indexTarget).Id(ad["Id"].ToString()));
                 }

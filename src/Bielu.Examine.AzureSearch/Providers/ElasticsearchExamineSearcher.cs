@@ -1,4 +1,6 @@
-﻿using Bielu.Examine.Core.Models;
+﻿using Azure.Search.Documents;
+using Azure.Search.Documents.Models;
+using Bielu.Examine.Core.Models;
 using Bielu.Examine.Core.Queries;
 using Bielu.Examine.Core.Services;
 using Bielu.Examine.Elasticsearch.Configuration;
@@ -6,11 +8,6 @@ using Bielu.Examine.Elasticsearch.Extensions;
 using Bielu.Examine.Elasticsearch.Helpers;
 using Bielu.Examine.Elasticsearch.Model;
 using Bielu.Examine.Elasticsearch.Services;
-using Elastic.Clients.Elasticsearch;
-using Elastic.Clients.Elasticsearch.IndexManagement;
-using Elastic.Clients.Elasticsearch.Mapping;
-using Elastic.Clients.Elasticsearch.QueryDsl;
-using Elastic.Transport.Extensions;
 using Examine;
 using Examine.Lucene.Search;
 using Examine.Search;
@@ -19,11 +16,10 @@ using Lucene.Net.Search;
 using Lucene.Net.Util;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Query = Elastic.Clients.Elasticsearch.QueryDsl.Query;
 
 namespace Bielu.Examine.Elasticsearch.Providers;
 
-public class ElasticsearchExamineSearcher(string name, string? indexAlias, ILoggerFactory loggerFactory, ISearchService elasticsearchService) : BaseSearchProvider(name),IBieluExamineSearcher, IDisposable
+public class AzureSearchExamineSearcher(string name, string? indexAlias, ILoggerFactory loggerFactory, ISearchService elasticsearchService) : BaseSearchProvider(name),IBieluExamineSearcher, IDisposable
 {
     public string? IndexAlias => indexAlias;
     private readonly List<SortField> _sortFields = new List<SortField>();
@@ -71,32 +67,10 @@ public class ElasticsearchExamineSearcher(string name, string? indexAlias, ILogg
             return _fieldsMapping;
         }
     }
-    public override ISearchResults Search(string searchText, QueryOptions options = null)
+
+    private BieluExamineSearchResults DoSearch(Query query, QueryOptions options)
     {
-        var query = new MultiMatchQuery
-        {
-            Query = searchText,
-            Analyzer = "standard",
-            Slop = 2,
-            Type = TextQueryType.Phrase
-        };
-
-        return DoSearch(query, options);
-    }
-
-    private BieluExamineSearchResults DoSearch(Query query, QueryOptions options,
-        SortOptionsDescriptor<ElasticDocument>? optionsDescriptor = null)
-    {
-        SearchRequestDescriptor<ElasticDocument> searchDescriptor = new SearchRequestDescriptor<ElasticDocument>();
-        searchDescriptor.Index(indexAlias)
-            .Query(query);
-        if (optionsDescriptor != null)
-        {
-            searchDescriptor = searchDescriptor.Sort(optionsDescriptor);
-        }
-
-        searchDescriptor = searchDescriptor.From(options.Skip).Size(options.Take);
-        return elasticsearchService.Search(name,searchDescriptor);
+        return elasticsearchService.Search(name,options,query);
 
     }
 
@@ -111,12 +85,21 @@ public class ElasticsearchExamineSearcher(string name, string? indexAlias, ILogg
             return _parsedValues;
         }
     }
+    public override ISearchResults Search(string searchText, QueryOptions options = null)
+    {
+        SearchOptions searchOptions = new SearchOptions()
+        {
+            IncludeTotalCount = true,
+            Filter = "search.ismatch('" + searchText + "')", //todo: test this
+            OrderBy = { "" },
+            QueryType = SearchQueryType.Simple,
+        };
+       return elasticsearchService.Search(searchText,searchOptions);
+    }
     public override IQuery CreateQuery(string category = null,
         BooleanOperation defaultOperation = BooleanOperation.And)
     {
         return elasticsearchService.CreateQuery(name, indexAlias, category, defaultOperation);
-
-        return new BieluExamineQuery(name,indexAlias,new ElasticSearchQueryParser(LuceneVersion.LUCENE_CURRENT,ParsedProperties,new StandardAnalyzer(LuceneVersion.LUCENE_48)), elasticsearchService,loggerFactory,loggerFactory.CreateLogger<BieluExamineQuery>() ,category, new LuceneSearchOptions(), defaultOperation );
     }
  #pragma warning disable CA1816
     public void Dispose() => loggerFactory.Dispose();

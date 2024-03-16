@@ -1,7 +1,7 @@
-﻿using Bielu.Examine.Core.Configuration;
+﻿using Azure.Search.Documents.Indexes.Models;
+using Bielu.Examine.Core.Configuration;
 using Bielu.Examine.Core.Extensions;
 using Bielu.Examine.Elasticsearch.Model;
-using Elastic.Clients.Elasticsearch.Mapping;
 using Examine;
 using Lucene.Net.Analysis;
 
@@ -17,21 +17,65 @@ public class PropertyMappingService(BieluExamineConfiguration configuration) : I
     {
         "int", "number"
     };
-  protected virtual void FromExamineType(ref PropertiesDescriptor<ElasticDocument> descriptor, FieldDefinition field, string analyzer)
+    protected virtual SearchFieldTemplate FromExamineType(FieldDefinition field, string analyzer)
     {
         var fieldType = field.Type.ToLowerInvariant();
         var fieldName = field.Name.FormatFieldName();
-        descriptor = fieldType switch
+        var azureSeachField = fieldType switch
         {
-            var type when _dateFormats.Contains(type) => descriptor.Date(fieldName),
-            "double" => descriptor.DoubleNumber(fieldName),
-            "float" => descriptor.FloatNumber(fieldName),
-            "long" => descriptor.LongNumber(fieldName),
-            var type when _integerFormats.Contains(type) => descriptor.IntegerNumber(fieldName),
-            "raw" => descriptor.Keyword(fieldName),
-            "keyword" => descriptor.Keyword(fieldName),
-            _ => descriptor.Text(fieldName, configure => configure.Analyzer(FromLuceneAnalyzer(analyzer)))
+            var type when _dateFormats.Contains(type) => new SimpleField(fieldName, SearchFieldDataType.DateTimeOffset)
+            {
+                IsKey = false,
+                IsFilterable = true,
+                IsSortable = true,
+            },
+            "double" => new SimpleField(fieldName, SearchFieldDataType.Double)
+            {
+                IsKey = false,
+                IsFilterable = true,
+                IsSortable = true,
+            },
+            "float" => new SimpleField(fieldName, SearchFieldDataType.Double)
+            {
+                IsKey = false,
+                IsFilterable = true,
+                IsSortable = true,
+            },
+            "long" => new SimpleField(fieldName, SearchFieldDataType.Int64)
+            {
+                IsKey = false,
+                IsFilterable = true,
+                IsSortable = true,
+            },
+            var type when _integerFormats.Contains(type) => new SimpleField(fieldName, SearchFieldDataType.Int32)
+            {
+                IsKey = false,
+                IsFilterable = true,
+                IsSortable = true,
+            },
+            "raw" => new SearchableField(fieldName)
+            {
+                AnalyzerName = new LexicalAnalyzerName("keywordanalyzer"),
+                IsKey = true,
+                IsFilterable = true,
+                IsSortable = true
+            },
+            "keyword" => new SearchableField(fieldName)
+            {
+                AnalyzerName = new LexicalAnalyzerName("keywordanalyzer"),
+                IsKey = true,
+                IsFilterable = true,
+                IsSortable = true
+            },
+            _ => new SearchableField(fieldName)
+            {
+                AnalyzerName = new LexicalAnalyzerName("simpleanalyzer"),
+                IsKey = true,
+                IsFilterable = true,
+                IsSortable = true
+            }
         };
+        return azureSeachField;
     }
     private static string FromLuceneAnalyzer(string? analyzer)
     {
@@ -56,32 +100,66 @@ public class PropertyMappingService(BieluExamineConfiguration configuration) : I
             _ => "simple"
         };
     }
-    public virtual PropertiesDescriptor<ElasticDocument> CreateFieldsMapping(PropertiesDescriptor<ElasticDocument> descriptor,
-        ReadOnlyFieldDefinitionCollection fieldDefinitionCollection, string analyzer)
+    public virtual IEnumerable<SearchFieldTemplate> GetAzureSearchMapping(ReadOnlyFieldDefinitionCollection properties, string analyzer)
     {
-
-        descriptor.Keyword(s => "Id");
-        descriptor.Keyword(s => ExamineFieldNames.ItemIdFieldName.FormatFieldName());
-        descriptor.Keyword(s => ExamineFieldNames.ItemTypeFieldName.FormatFieldName());
-        descriptor.Keyword(s => ExamineFieldNames.CategoryFieldName.FormatFieldName());
+        var fields = new List<SearchFieldTemplate>();
+        fields.Add(new SearchableField("Id")
+        {
+            AnalyzerName = new LexicalAnalyzerName("keywordanalyzer"),
+            IsKey = true,
+            IsFilterable = true,
+            IsSortable = true
+        });
+        fields.Add(new SearchableField(ExamineFieldNames.ItemIdFieldName.FormatFieldName())
+        {
+            AnalyzerName = new LexicalAnalyzerName("keywordanalyzer"),
+            IsKey = false,
+            IsFilterable = true,
+            IsSortable = true
+        });
+        fields.Add(new SearchableField(ExamineFieldNames.CategoryFieldName.FormatFieldName())
+        {
+            AnalyzerName = new LexicalAnalyzerName("keywordanalyzer"),
+            IsKey = false,
+            IsFilterable = true,
+            IsSortable = true
+        });
         foreach (var mapping in configuration.FieldAnalyzerFieldMapping)
         {
             foreach (var propertyName in mapping.Value)
             {
-                descriptor = mapping.Key switch
+                var field = mapping.Key switch
                 {
-                    "keyword" => descriptor.Keyword(s => propertyName),
-                    "text" => descriptor.Text(s => propertyName, configure => configure.Analyzer(FromLuceneAnalyzer(analyzer))), //todo: implement other types
-                    _ => descriptor.Text(s => propertyName, configure => configure.Analyzer(FromLuceneAnalyzer(analyzer)))
+                    "keyword" => new SearchableField(propertyName)
+                    {
+                        AnalyzerName = new LexicalAnalyzerName("keywordanalyzer"),
+                        IsKey = false,
+                        IsFilterable = true,
+                        IsSortable = true
+                    },
+                    "text" => new SearchableField(propertyName)
+                    {
+                        AnalyzerName = new LexicalAnalyzerName("simpleanalyzer"),
+                        IsKey = false,
+                        IsFilterable = true,
+                        IsSortable = true
+                    }, //todo: implement other types
+                    _ => new SearchableField(propertyName)
+                    {
+                        AnalyzerName = new LexicalAnalyzerName(mapping.Key),
+                        IsKey = false,
+                        IsFilterable = true,
+                        IsSortable = true
+                    }
                 };
+                fields.Add(field);
             }
         }
-        foreach (FieldDefinition field in fieldDefinitionCollection)
+        foreach (FieldDefinition field in properties)
         {
-            FromExamineType(ref descriptor, field,analyzer);
+            fields.Add(FromExamineType(field, analyzer));
         }
 
-        return descriptor;
+        return fields;
     }
-    public Func<PropertiesDescriptor<ElasticDocument>, PropertiesDescriptor<ElasticDocument>> GetElasticSearchMapping(ReadOnlyFieldDefinitionCollection properties, string analyzer) => (descriptor) => CreateFieldsMapping(descriptor, properties, analyzer);
 }
