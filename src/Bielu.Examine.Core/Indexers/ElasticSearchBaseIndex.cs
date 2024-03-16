@@ -8,16 +8,15 @@ using Microsoft.Extensions.Options;
 
 namespace Bielu.Examine.Core.Indexers;
 
-public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex> logger, ILoggerFactory loggerFactory, IElasticsearchService elasticSearchService, IIndexStateService indexStateService, IOptionsMonitor<LuceneDirectoryIndexOptions> indexOptions) : BaseIndexProvider(loggerFactory, name, indexOptions), IBieluExamineIndex, IDisposable
+public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex> logger, ILoggerFactory loggerFactory, ISearchService elasticSearchService, IIndexStateService indexStateService, IBieluSearchManager bieluSearchManager, IOptionsMonitor<LuceneDirectoryIndexOptions> indexOptions) : BaseIndexProvider(loggerFactory, name, indexOptions), IBieluExamineIndex, IDisposable
 {
     private bool? _exists;
     private ExamineIndexState IndexState => indexStateService.GetIndexState(name);
     private static readonly object _existsLocker = new object();
-
     /// <summary>
     /// Occurs when [document writing].
     /// </summary>
-    public event EventHandler<Events.DocumentWritingEventArgs> DocumentWriting;
+    public event EventHandler<DocumentWritingEventArgs> DocumentWriting;
 
     public string? IndexName => IndexState.IndexName;
 
@@ -26,70 +25,13 @@ public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex
     public string? Analyzer { get; }
 
 
-    protected virtual void FromExamineType(ref PropertiesDescriptor<ElasticDocument> descriptor, FieldDefinition field)
-    {
-        var fieldType = field.Type.ToLowerInvariant();
-        var fieldName = field.Name.FormatFieldName();
-        descriptor = fieldType switch
-        {
-            var type when _dateFormats.Contains(type) => descriptor.Date(fieldName),
-            "double" => descriptor.DoubleNumber(fieldName),
-            "float" => descriptor.FloatNumber(fieldName),
-            "long" => descriptor.LongNumber(fieldName),
-            var type when _integerFormats.Contains(type) => descriptor.IntegerNumber(fieldName),
-            "raw" => descriptor.Keyword(fieldName),
-            _ => descriptor.Text(fieldName, configure => configure.Analyzer(FromLuceneAnalyzer(Analyzer)))
-        };
-    }
-
-    protected virtual void OnDocumentWriting(Events.DocumentWritingEventArgs docArgs)
+    protected virtual void OnDocumentWriting(DocumentWritingEventArgs docArgs)
     {
         DocumentWriting?.Invoke(this, docArgs);
     }
 
-    private static string FromLuceneAnalyzer(string? analyzer)
-    {
-        return analyzer switch
-        {
-            null or "" => "simple",
-            _ when !analyzer.Contains(',') => "simple",
-            _ when analyzer.Contains("StandardAnalyzer") => "standard",
-            _ when analyzer.Contains("WhitespaceAnalyzer") => "whitespace",
-            _ when analyzer.Contains("SimpleAnalyzer") => "simple",
-            _ when analyzer.Contains("KeywordAnalyzer") => "keyword",
-            _ when analyzer.Contains("StopAnalyzer") => "stop",
-            _ when analyzer.Contains("ArabicAnalyzer") => "arabic",
-            _ when analyzer.Contains("BrazilianAnalyzer") => "brazilian",
-            _ when analyzer.Contains("ChineseAnalyzer") => "chinese",
-            _ when analyzer.Contains("CJKAnalyzer") => "cjk",
-            _ when analyzer.Contains("CzechAnalyzer") => "czech",
-            _ when analyzer.Contains("DutchAnalyzer") => "dutch",
-            _ when analyzer.Contains("FrenchAnalyzer") => "french",
-            _ when analyzer.Contains("GermanAnalyzer") => "german",
-            _ when analyzer.Contains("RussianAnalyzer") => "russian",
-            _ => "simple"
-        };
-    }
-    public virtual PropertiesDescriptor<ElasticDocument> CreateFieldsMapping(PropertiesDescriptor<ElasticDocument> descriptor,
-        ReadOnlyFieldDefinitionCollection fieldDefinitionCollection)
-    {
 
-        descriptor.Keyword(s => "Id");
-        descriptor.Keyword(s => ExamineFieldNames.ItemIdFieldName.FormatFieldName());
-        descriptor.Keyword(s => ExamineFieldNames.ItemTypeFieldName.FormatFieldName());
-        descriptor.Keyword(s => ExamineFieldNames.CategoryFieldName.FormatFieldName());
-
-        foreach (FieldDefinition field in fieldDefinitionCollection)
-        {
-            FromExamineType(ref descriptor, field);
-        }
-
-        return descriptor;
-    }
-    private ElasticsearchExamineSearcher CreateSearcher()
-    {
-        return new ElasticsearchExamineSearcher(Name, IndexAlias, LoggerFactory, elasticSearchService);
-    }
+    private IBieluExamineSearcher CreateSearcher() => bieluSearchManager.GetSearcher(name);
 
 
     protected override void PerformIndexItems(IEnumerable<ValueSet> values, Action<IndexOperationEventArgs> onComplete)
@@ -110,7 +52,7 @@ public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex
 
     public override void CreateIndex()
     {
-        elasticSearchService.EnsuredIndexExists(name, (descriptor) => CreateFieldsMapping(descriptor, FieldDefinitions), true);
+        elasticSearchService.EnsuredIndexExists(name, Analyzer, FieldDefinitions, true);
     }
 
     public override bool IndexExists()
@@ -136,7 +78,7 @@ public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex
         elasticSearchService.SwapTempIndex(name);
     }
 
-    public IEnumerable<string> GetFields() => ((ElasticsearchExamineSearcher)Searcher).AllFields;
+    public IEnumerable<string> GetFields() => ((IBieluExamineSearcher)Searcher).AllFields;
 
     #region IIndexDiagnostics
 
@@ -144,15 +86,6 @@ public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex
         (int)(IndexExists() ? elasticSearchService.GetDocumentCount(name) : 0);
 
     public int FieldCount => IndexExists() ? GetFields().Count() : 0;
-
-    private static readonly string[] _dateFormats = new[]
-    {
-        "date", "datetimeoffset", "datetime"
-    };
-    private static readonly string[] _integerFormats = new[]
-    {
-        "int", "number"
-    };
 
     #endregion
 #pragma warning disable CA1816

@@ -19,12 +19,11 @@ using Lucene.Net.Search;
 using Lucene.Net.Util;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using ElasticSearchQuery = Bielu.Examine.Core.Queries.ElasticSearchQuery;
 using Query = Elastic.Clients.Elasticsearch.QueryDsl.Query;
 
 namespace Bielu.Examine.Elasticsearch.Providers;
 
-public class ElasticsearchExamineSearcher(string name, string? indexAlias, ILoggerFactory loggerFactory, ISearchService elasticsearchService) : BaseSearchProvider(name), IDisposable
+public class ElasticsearchExamineSearcher(string name, string? indexAlias, ILoggerFactory loggerFactory, ISearchService elasticsearchService) : BaseSearchProvider(name),IBieluExamineSearcher, IDisposable
 {
     public string? IndexAlias => indexAlias;
     private readonly List<SortField> _sortFields = new List<SortField>();
@@ -117,7 +116,7 @@ public class ElasticsearchExamineSearcher(string name, string? indexAlias, ILogg
     {
         return elasticsearchService.CreateQuery(name, indexAlias, category, defaultOperation);
 
-        return new ElasticSearchQuery(name,indexAlias,new ElasticSearchQueryParser(LuceneVersion.LUCENE_CURRENT,ParsedProperties,new StandardAnalyzer(LuceneVersion.LUCENE_48)), elasticsearchService,loggerFactory,loggerFactory.CreateLogger<ElasticSearchQuery>() ,category, new LuceneSearchOptions(), defaultOperation );
+        return new BieluExamineQuery(name,indexAlias,new ElasticSearchQueryParser(LuceneVersion.LUCENE_CURRENT,ParsedProperties,new StandardAnalyzer(LuceneVersion.LUCENE_48)), elasticsearchService,loggerFactory,loggerFactory.CreateLogger<BieluExamineQuery>() ,category, new LuceneSearchOptions(), defaultOperation );
     }
  #pragma warning disable CA1816
     public void Dispose() => loggerFactory.Dispose();

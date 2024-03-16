@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
+using Bielu.Examine.Core.Configuration;
 using Bielu.Examine.Elasticsearch.Configuration;
-using Bielu.Examine.Elasticsearch.Umbraco.Configuration;
 using bielu.SchemaGenerator.Build.Configuration;
 using bielu.SchemaGenerator.Build.Services;
 using CommandLine;
@@ -12,7 +12,7 @@ internal sealed class Program
     static readonly IList<Assembly> _assemblies = new List<Assembly>()
     {
         typeof(BieluExamineElasticOptions).Assembly,
-        typeof(UmbracoExamineElasticOptions).Assembly
+        typeof(BieluExamineOptions).Assembly
     };
 
     public static async Task Main(string[] args)

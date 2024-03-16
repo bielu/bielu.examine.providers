@@ -1,12 +1,13 @@
-﻿using Examine.Lucene.Search;
+﻿using Bielu.Examine.Elasticsearch;
+using Examine.Lucene.Search;
 using Examine.Search;
 using Lucene.Net.Search;
 
 namespace Bielu.Examine.Core.Queries;
 
-public class ElasticQuery  : IQuery, INestedQuery
+public class ExamineQuery  : IQuery, INestedQuery
 {
-    private readonly ElasticSearchQuery _search;
+    private readonly BieluExamineQuery _search;
 
         private readonly Occur _occurrence;
 
@@ -15,7 +16,7 @@ public class ElasticQuery  : IQuery, INestedQuery
         /// </summary>
         /// <param name="search">The search.</param>
         /// <param name="occurrence">The occurance.</param>
-        public ElasticQuery(ElasticSearchQuery search, Occur occurrence)
+        public ExamineQuery(BieluExamineQuery search, Occur occurrence)
         {
             _search = search;
             _occurrence = occurrence;
@@ -61,7 +62,7 @@ public class ElasticQuery  : IQuery, INestedQuery
         /// <inheritdoc />
         public IBooleanOperation Group(Func<INestedQuery, INestedBooleanOperation> inner, BooleanOperation defaultOp = BooleanOperation.Or)
         {
-            var bo = new ElasticSearchBooleanOperation(_search);
+            var bo = new BieluExamineBooleanOperation(_search);
             bo.Op(inner, defaultOp);
             return bo;
         }

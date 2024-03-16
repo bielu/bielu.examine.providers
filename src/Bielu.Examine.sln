@@ -4,8 +4,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bielu.Examine.Core", "Bielu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bielu.Examine.Elasticsearch", "Bielu.Examine.Elasticsearch\Bielu.Examine.Elasticsearch.csproj", "{6DE9F1F7-914A-4232-8B25-06C4603E0041}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bielu.Examine.Elasticsearch.Umbraco", "Bielu.Examine.Elasticsearch.Umbraco\Bielu.Examine.Elasticsearch.Umbraco.csproj", "{2E7A7F31-5FF3-4BE3-8140-B6358BA24C5A}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SchemaGenerator", "SchemaGenerator\SchemaGenerator.csproj", "{88B82586-1590-4B51-A437-A7C71E21863D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "bielu.Examine.UmbracoInstance", "bielu.Examine.UmbracoInstance\bielu.Examine.UmbracoInstance.csproj", "{D499496B-12AE-4823-8BC4-B575568FA5A5}"
@@ -20,9 +18,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionsFiles", "Solutions
 		..\.gitignore = ..\.gitignore
 		..\version.props = ..\version.props
 		directory.build.props = directory.build.props
+		Directory.Packages.props = Directory.Packages.props
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bielu.Examine.ElasticSearch.Umbraco.Forms", "Bielu.Examine.ElasticSearch.Umbraco.Forms\Bielu.Examine.ElasticSearch.Umbraco.Forms.csproj", "{3881358D-FA15-44AF-9F32-E2B639771493}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bielu.Examine.Umbraco.Forms", "Bielu.Examine.Umbraco.Forms\Bielu.Examine.Umbraco.Forms.csproj", "{3881358D-FA15-44AF-9F32-E2B639771493}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bielu.Examine.AzureSearch", "Bielu.Examine.AzureSearch\Bielu.Examine.AzureSearch.csproj", "{18C4F88B-3F4F-43C3-9220-E578F749AC71}"
 EndProject
@@ -40,10 +39,6 @@ Global
 		{6DE9F1F7-914A-4232-8B25-06C4603E0041}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6DE9F1F7-914A-4232-8B25-06C4603E0041}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6DE9F1F7-914A-4232-8B25-06C4603E0041}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2E7A7F31-5FF3-4BE3-8140-B6358BA24C5A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2E7A7F31-5FF3-4BE3-8140-B6358BA24C5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2E7A7F31-5FF3-4BE3-8140-B6358BA24C5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2E7A7F31-5FF3-4BE3-8140-B6358BA24C5A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{88B82586-1590-4B51-A437-A7C71E21863D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{88B82586-1590-4B51-A437-A7C71E21863D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{88B82586-1590-4B51-A437-A7C71E21863D}.Release|Any CPU.ActiveCfg = Release|Any CPU

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
@@ -8,16 +8,15 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Bielu.Examine.Elasticsearch.Umbraco\Bielu.Examine.Elasticsearch.Umbraco.csproj" />
+      <PackageReference Include="Umbraco.Forms.Core">
+      </PackageReference>
+      <PackageReference Include="Umbraco.Forms.Examine">
+      </PackageReference>
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Umbraco.Forms.Core">
-        <Version>13.0.2</Version>
-      </PackageReference>
-      <PackageReference Include="Umbraco.Forms.Examine">
-        <Version>13.0.2</Version>
-      </PackageReference>
+      <ProjectReference Include="..\Bielu.Examine.Core\Bielu.Examine.Core.csproj" />
+      <ProjectReference Include="..\bielu.Examine.Umbraco\bielu.Examine.Umbraco.csproj" />
     </ItemGroup>
 
 </Project>

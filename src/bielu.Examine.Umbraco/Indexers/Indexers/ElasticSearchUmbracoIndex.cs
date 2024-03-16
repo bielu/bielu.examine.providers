@@ -13,7 +13,7 @@ using Umbraco.Extensions;
 
 namespace bielu.Examine.Umbraco.Indexers.Indexers
 {
-    public class ElasticSearchUmbracoIndex(string? name, ILoggerFactory loggerFactory, IRuntime runtime, ILogger<ElasticSearchUmbracoIndex> logger,IIndexStateService stateService, IOptionsMonitor<LuceneDirectoryIndexOptions> indexOptions) : ElasticSearchBaseIndex(name, logger, loggerFactory, elasticSearchService,stateService,indexOptions, examineElasticOptions), IBieluExamineIndex, IIndexDiagnostics
+    public class ElasticSearchUmbracoIndex(string? name, ILoggerFactory loggerFactory, IRuntime runtime, ILogger<ElasticSearchUmbracoIndex> logger,ISearchService searchService, IIndexStateService stateService, IBieluSearchManager manager, IOptionsMonitor<LuceneDirectoryIndexOptions> indexOptions) : ElasticSearchBaseIndex(name, logger, loggerFactory, searchService,stateService,manager,indexOptions), IBieluExamineIndex, IIndexDiagnostics
     {
 
         public const string SpecialFieldPrefix = "__";
@@ -21,10 +21,7 @@ namespace bielu.Examine.Umbraco.Indexers.Indexers
         public const string NodeKeyFieldName = SpecialFieldPrefix + "Key";
         public const string IconFieldName = SpecialFieldPrefix + "Icon";
         public const string PublishedFieldName = SpecialFieldPrefix + "Published";
-        private readonly List<string> _keywordFields = new List<string>()
-        {
-            IndexPathFieldName
-        };
+
         private readonly IProfilingLogger _logger;
         public bool EnableDefaultEventHandler { get; set; } = true;
         public override string Name => name;
@@ -75,38 +72,12 @@ namespace bielu.Examine.Umbraco.Indexers.Indexers
  #pragma warning restore CA1848
             base.OnIndexingError(e);
         }
-        public override PropertiesDescriptor<ElasticDocument> CreateFieldsMapping(PropertiesDescriptor<ElasticDocument> descriptor,
-            ReadOnlyFieldDefinitionCollection fieldDefinitionCollection)
-        {
-            descriptor.Keyword("Id".FormatFieldName());
-            descriptor.Keyword(ExamineFieldNames.ItemIdFieldName.FormatFieldName());
-            descriptor.Keyword(ExamineFieldNames.ItemTypeFieldName.FormatFieldName());
-            descriptor.Keyword(ExamineFieldNames.CategoryFieldName.FormatFieldName());
-            foreach (FieldDefinition field in fieldDefinitionCollection)
-            {
-                FromExamineType(ref descriptor, field);
-            }
 
-            //  var docArgs = new MappingOperationEventArgs(descriptor);
-            // onMapping(docArgs);
-
-            return descriptor;
-        }
-        protected override void FromExamineType(ref PropertiesDescriptor<ElasticDocument> descriptor, FieldDefinition field)
-        {
-
-            if (_keywordFields.Contains(field.Name))
-            {
-                descriptor.Keyword(field.Name.FormatFieldName());
-                return;
-            }
-            base.FromExamineType(ref descriptor, field);
-        }
         protected override void PerformDeleteFromIndex(IEnumerable<string> itemIds,
             Action<IndexOperationEventArgs> onComplete)
         {
 
-            var response = elasticSearchService.DeleteBatch(name,itemIds.Where(x => !string.IsNullOrWhiteSpace(x)));
+            var response = searchService.DeleteBatch(name,itemIds.Where(x => !string.IsNullOrWhiteSpace(x)));
         }
 
 
@@ -136,7 +107,7 @@ namespace bielu.Examine.Umbraco.Indexers.Indexers
 
         public Attempt<string?> IsHealthy()
         {
-            var isHealthy = elasticSearchService.HealthCheck(name);
+            var isHealthy = searchService.HealthCheck(name);
             return isHealthy
                 ? Attempt<string?>.Succeed()
                 : Attempt.Fail("ElasticSearch cluster is not healthy");
@@ -169,8 +140,6 @@ namespace bielu.Examine.Umbraco.Indexers.Indexers
             metadata[nameof(state.Reindexing)] = state.Reindexing;
             metadata[nameof(state.CreatingNewIndex)] = state.CreatingNewIndex;
             metadata[nameof(IndexName)] = state.IndexName;
-            metadata[nameof(ElasticUrl)] = ElasticUrl;
-            metadata[nameof(ElasticId)] = ElasticId;
             metadata[nameof(Analyzer)] = Analyzer;
             metadata[nameof(EnableDefaultEventHandler)] = EnableDefaultEventHandler;
             metadata[nameof(PublishedValuesOnly)] = PublishedValuesOnly;
@@ -199,7 +168,7 @@ namespace bielu.Examine.Umbraco.Indexers.Indexers
 
         private void AddFieldDefinitionCollectionMetadata(Dictionary<string, object?> metadata)
         {
-            metadata[nameof(FieldDefinitionCollection)] = String.Join(", ", (Searcher as ElasticsearchExamineSearcher).AllFields);
+            metadata[nameof(FieldDefinitionCollection)] = String.Join(", ", (Searcher as IBieluExamineSearcher).AllFields);
         }
     }
 }

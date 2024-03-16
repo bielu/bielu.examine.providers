@@ -1,5 +1,7 @@
 ﻿using Bielu.Examine.Core.Extensions;
 using Bielu.Examine.Core.Models;
+using Bielu.Examine.Core.Queries;
+using Bielu.Examine.Core.Regex;
 using Bielu.Examine.Core.Services;
 using Bielu.Examine.Elasticsearch.Extensions;
 using Bielu.Examine.Elasticsearch.Helpers;
@@ -7,14 +9,20 @@ using Bielu.Examine.Elasticsearch.Model;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Clients.Elasticsearch.IndexManagement;
 using Elastic.Clients.Elasticsearch.Mapping;
+using Elastic.Clients.Elasticsearch.QueryDsl;
 using Elastic.Transport.Extensions;
 using Examine;
+using Examine.Lucene.Search;
+using Examine.Search;
+using Lucene.Net.Analysis.Standard;
 using Lucene.Net.Documents;
+using Lucene.Net.Util;
 using Microsoft.Extensions.Logging;
+using Query = Lucene.Net.Search.Query;
 
 namespace Bielu.Examine.Elasticsearch.Services;
 
-public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexStateService service, ILogger<ElasticsearchService> logger) : ISearchService
+public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexStateService service, IPropertyMappingService propertyMappingService, ILogger<ElasticsearchService> logger, ILoggerFactory loggerFactory) : ISearchService
 {
     public bool IndexExists(string examineIndexName)
     {
@@ -40,12 +48,31 @@ public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexSta
         var state = service.GetIndexState(examineIndexName);
         return GetIndexesAssignedToAlias(GetClient(examineIndexName), state.IndexAlias);
     }
-    public void EnsuredIndexExists(string examineIndexName, Func<object, object> fieldsMapping, bool overrideExisting = false) => throw new NotImplementedException();
-    public void CreateIndex(string examineIndexName, Func<object, object> fieldsMapping) => throw new NotImplementedException();
-    IEnumerable<ExamineProperty>? ISearchService.GetProperties(string examineIndexName) => throw new NotImplementedException();
-    public BieluExamineSearchResults Search(string examineIndexName, object searchDescriptor) => throw new NotImplementedException();
-    public void EnsuredIndexExists(string examineIndexName, Func<PropertiesDescriptor<ElasticDocument>, PropertiesDescriptor<ElasticDocument>> fieldsMapping, bool overrideExisting = false)
+    public void CreateIndex(string examineIndexName, string analyzer,  ReadOnlyFieldDefinitionCollection properties)
     {
+        var fieldsMapping = propertyMappingService.GetElasticSearchMapping(properties, analyzer);
+        CreateIndex(examineIndexName, fieldsMapping);
+    }
+    public BieluExamineSearchResults Search(string examineIndexName, QueryOptions? options, Query query)
+    {
+        var state = service.GetIndexState(examineIndexName);
+        var queryContainer = new QueryStringQuery()
+        {
+            Query = QueryRegex.PathRegex().Replace(query.ToString(), "$1\\-"), AnalyzeWildcard = true
+
+        };
+        SearchRequestDescriptor<ElasticDocument> searchDescriptor = new SearchRequestDescriptor<ElasticDocument>();
+        searchDescriptor.Index(state.IndexAlias)
+            .Size(options?.Take ?? 1000)
+            .From(options?.Skip ?? 0)
+            .Query(queryContainer);
+        return this.Search(examineIndexName, searchDescriptor);
+    }
+    public BieluExamineSearchResults Search(string examineIndexName, object searchDescriptor) => throw new NotImplementedException();
+    public BieluExamineSearchResults Search(string examineIndexName, object searchDescriptor, Query query) => throw new NotImplementedException();
+    public void EnsuredIndexExists(string examineIndexName, string analyzer, ReadOnlyFieldDefinitionCollection properties, bool overrideExisting = false)
+    {
+        var fieldsMapping = propertyMappingService.GetElasticSearchMapping(properties, analyzer);
         if (IndexExists(examineIndexName))
         {
             if (overrideExisting)
@@ -119,7 +146,7 @@ public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexSta
 
 
     }
-    public Properties? GetProperties(string examineIndexName)
+    public IEnumerable<string>? GetPropertiesNames(string examineIndexName)
     {
         var client = GetClient(examineIndexName);
         var state = service.GetIndexState(examineIndexName);
@@ -131,7 +158,26 @@ public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexSta
         }
         GetMappingResponse response =
             client.Indices.GetMapping(mapping => mapping.Indices(indexesMappedToAlias[0]));
-        return response.GetMappingFor(indexesMappedToAlias[0]).Properties;
+        var properties = response.GetMappingFor(indexesMappedToAlias[0]).Properties;
+        return properties.Select(x => x.Key.Name).ToList();
+    }
+    public IEnumerable<ExamineProperty>? GetProperties(string examineIndexName)
+    {
+        var client = GetClient(examineIndexName);
+        var state = service.GetIndexState(examineIndexName);
+
+        var indexesMappedToAlias = GetIndexesAssignedToAlias(client, state.IndexAlias).ToList();
+        if (indexesMappedToAlias.Count <= 0)
+        {
+            return null;
+        }
+        GetMappingResponse response =
+            client.Indices.GetMapping(mapping => mapping.Indices(indexesMappedToAlias[0]));
+        var properties = response.GetMappingFor(indexesMappedToAlias[0]).Properties;
+        return properties.Select(x => new ExamineProperty()
+        {
+            Key = x.Key.Name, Type = x.Value.Type.ToString()
+        }).ToList();
     }
     public ElasticSearchSearchResults Search(string examineIndexName, SearchRequestDescriptor<ElasticDocument> searchDescriptor)
     {
@@ -176,7 +222,7 @@ public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexSta
         {
             return 0;
         }
-        if(!values.Any())
+        if (!values.Any())
         {
             return 0;
         }
@@ -210,6 +256,7 @@ public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexSta
         return client.Cluster.Health().Status == HealthStatus.Green || client.Cluster.Health().Status == HealthStatus.Yellow;
 
     }
+    public IQuery CreateQuery(string name, string? indexAlias, string category, BooleanOperation defaultOperation) => new BieluExamineQuery(name, indexAlias, new ElasticSearchQueryParser(LuceneVersion.LUCENE_CURRENT, GetPropertiesNames(name).ToArray(), new StandardAnalyzer(LuceneVersion.LUCENE_48)), this, loggerFactory, loggerFactory.CreateLogger<BieluExamineQuery>(), category, new LuceneSearchOptions(), defaultOperation);
     private static string CreateIndexName(string indexAlias)
     {
         return $"{indexAlias}_{DateTime.UtcNow:yyyyMMddHHmmss}";
@@ -224,7 +271,7 @@ public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexSta
             try
             {
                 //var indexingNodeDataArgs = new IndexingItemEventArgs(this, d);
-            //    OnTransformingIndexValues(indexingNodeDataArgs);
+                //    OnTransformingIndexValues(indexingNodeDataArgs);
 
                 if (true)
                 {
@@ -244,8 +291,8 @@ public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexSta
                     }
 
                     var docArgs = new Events.DocumentWritingEventArgs(d, ad);
-                   // OnDocumentWriting(docArgs);
-                   descriptor=  descriptor.Index<ElasticDocument>(ad, indexTarget,indexingNodeDataArgs => indexingNodeDataArgs.Index(indexTarget).Id(ad["Id"].ToString()));
+                    // OnDocumentWriting(docArgs);
+                    descriptor = descriptor.Index<ElasticDocument>(ad, indexTarget, indexingNodeDataArgs => indexingNodeDataArgs.Index(indexTarget).Id(ad["Id"].ToString()));
                 }
             }
             catch (Exception e)

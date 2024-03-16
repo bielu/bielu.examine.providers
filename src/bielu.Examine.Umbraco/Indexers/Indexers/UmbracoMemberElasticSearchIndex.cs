@@ -7,7 +7,7 @@ using Umbraco.Cms.Infrastructure.Examine;
 
 namespace bielu.Examine.Umbraco.Indexers.Indexers;
 
-public class UmbracoMemberElasticSearchIndex(string? name, ILoggerFactory loggerFactory,  IRuntime runtime, ILogger<ElasticSearchUmbracoIndex> logger, ISearchService elasticSearchService, IIndexStateService stateService,  IOptionsMonitor<LuceneDirectoryIndexOptions> indexOptions) : ElasticSearchUmbracoIndex(name, loggerFactory,runtime, logger,elasticSearchService,stateService, indexOptions),IUmbracoMemberIndex
+public class UmbracoMemberElasticSearchIndex(string? name, ILoggerFactory loggerFactory, IRuntime runtime, ILogger<ElasticSearchUmbracoIndex> logger,ISearchService searchService, IIndexStateService stateService, IBieluSearchManager manager, IOptionsMonitor<LuceneDirectoryIndexOptions> indexOptions) : ElasticSearchUmbracoIndex(name, loggerFactory,runtime, logger,searchService,stateService,manager, indexOptions),IUmbracoMemberIndex
 {
 
 }
