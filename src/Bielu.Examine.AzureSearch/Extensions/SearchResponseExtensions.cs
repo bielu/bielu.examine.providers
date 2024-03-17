@@ -9,22 +9,23 @@ namespace Bielu.Examine.Elasticsearch.Extensions;
 
 public static class SearchResponseExtensions
 {
-    public static AzureSearchSearchResults ConvertToSearchResults(this SearchResultsPage<ElasticDocument> searchResult)
+    public static AzureSearchSearchResults ConvertToSearchResults(this SearchResults<ElasticDocument> searchResult)
     {
-        if (!searchResult.Values.Any())
+        var results = searchResult.GetResults();
+        if (!results.Any())
         {
             return AzureSearchSearchResults.Empty;
         }
-        var results = searchResult.Values.Select(x =>
+        var umbracoResults = results.Select(x =>
             new SearchResult(x.Document["Id"].ToString(), (float)x.Score.Value, () => x.Document?.ToDictionary(field => field.Key, field => field.Value is IEnumerable<object> list ? list.Select(item => item.ToString()).ToList() : new List<string?>()
             {
                 field.Value.ToString()
             }))).ToList();
         var totalItemCount = searchResult.TotalCount ?? 0;
-        var maxscore = searchResult.Values.Max(x=>x.Score) ?? 0;
-        var lastDocument = searchResult.Values[^1];
-        var afterOptions = searchResult.Values.Count != 0 ? new SearchAfterOptions(Convert.ToInt32(lastDocument.Document["Id"], CultureInfo.InvariantCulture),
+        var maxscore = results.Max(x=>x.Score) ?? 0;
+        var lastDocument = results.Last();
+        var afterOptions = results.Any() ? new SearchAfterOptions(Convert.ToInt32(lastDocument.Document["Id"], CultureInfo.InvariantCulture),
             (float)lastDocument.Score!.Value , null, 0) : new SearchAfterOptions(0, 0, null, 0);
-        return new AzureSearchSearchResults(results, totalItemCount, maxscore, afterOptions);
+        return new AzureSearchSearchResults(umbracoResults, totalItemCount, maxscore, afterOptions);
     }
 }

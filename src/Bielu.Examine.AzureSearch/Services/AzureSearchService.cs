@@ -1,11 +1,13 @@
 ﻿using Azure.Search.Documents;
 using Azure.Search.Documents.Indexes;
 using Azure.Search.Documents.Indexes.Models;
+using Azure.Search.Documents.Models;
 using Bielu.Examine.Core.Extensions;
 using Bielu.Examine.Core.Models;
 using Bielu.Examine.Core.Queries;
 using Bielu.Examine.Core.Regex;
 using Bielu.Examine.Core.Services;
+using Bielu.Examine.Elasticsearch.Extensions;
 using Bielu.Examine.Elasticsearch.Model;
 using Bielu.Examine.Elasticsearch.Services;
 using Examine;
@@ -50,18 +52,28 @@ public class AzureSearchService(IAzureSearchClientFactory factory, IIndexStateSe
         var state = service.GetIndexState(examineIndexName);
         var searchOptions=new SearchOptions()
         {
-            Filter = QueryRegex.PathRegex().Replace(query.ToString(), "$1\\-")
+            Filter = QueryRegex.PathRegex().Replace(query.ToString(), "$1\\-"),
+            Skip = options?.Skip ?? 0,
+            Size = options?.Take ?? 1000
         };
-        var searchResult = GetClient(examineIndexName).Search(searchOptions);
-        SearchRequestDescriptor<ElasticDocument> searchDescriptor = new SearchRequestDescriptor<ElasticDocument>();
-        searchDescriptor.Index(state.IndexAlias)
-            .Size(options?.Take ?? 1000)
-            .From(options?.Skip ?? 0)
-            .Query(queryContainer);
-        return this.Search(examineIndexName, searchDescriptor);
+
+        return this.Search(examineIndexName, searchOptions);
     }
-    public BieluExamineSearchResults Search(string examineIndexName, object searchDescriptor) => throw new NotImplementedException();
-    public BieluExamineSearchResults Search(string examineIndexName, object searchDescriptor, Query query) => throw new NotImplementedException();
+    public BieluExamineSearchResults Search(string examineIndexName, object searchDescriptor)
+    {
+        return searchDescriptor switch
+        {
+            SearchOptions descriptor => Search(examineIndexName, descriptor),
+            _ => throw new InvalidOperationException("Invalid search descriptor")
+        };
+    }
+    private AzureSearchSearchResults Search(string examineIndexName, SearchOptions searchDescriptor)
+    {
+        var client = GetSearchClient(examineIndexName);
+        SearchResults<ElasticDocument>
+            searchResult = client.Search<ElasticDocument>(searchDescriptor);
+        return searchResult.ConvertToSearchResults();
+    }
     public void EnsuredIndexExists(string examineIndexName, string analyzer, ReadOnlyFieldDefinitionCollection properties, bool overrideExisting = false)
     {
         var fieldsMapping = propertyMappingService.GetAzureSearchMapping(properties, analyzer);
@@ -182,7 +194,7 @@ public class AzureSearchService(IAzureSearchClientFactory factory, IIndexStateSe
     }
     public void SwapTempIndex(string? examineIndexName)
     {
-        var client = GetClient(examineIndexName);
+        var client = GetIndexingClient(examineIndexName);
         var state = service.GetIndexState(examineIndexName);
         var oldIndexes = GetIndexesAssignedToAlias(client, state.IndexAlias);
         var bulkAliasResponse = client.Indices.UpdateAliases(x => x.Actions(a => a.Add(add => add.Index(state.CurrentTemporaryIndexName).Alias(state.IndexAlias))));
