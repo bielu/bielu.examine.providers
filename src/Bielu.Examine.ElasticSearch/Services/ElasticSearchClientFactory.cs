@@ -6,16 +6,9 @@ using Microsoft.Extensions.Options;
 
 namespace Bielu.Examine.Elasticsearch.Services;
 
-public class ElasticSearchClientFactory : IElasticSearchClientFactory
+public class ElasticSearchClientFactory(IOptionsMonitor<BieluExamineElasticOptions> examineElasticOptions) : IElasticSearchClientFactory
 {
-    private BieluExamineElasticOptions _bieluExamineElasticOptions;
     Dictionary<string?, ElasticsearchClient> _clients = new Dictionary<string?, ElasticsearchClient>();
-
-    public ElasticSearchClientFactory(IOptionsMonitor<BieluExamineElasticOptions> examineElasticOptions)
-    {
-        _bieluExamineElasticOptions = examineElasticOptions.CurrentValue;
-        examineElasticOptions.OnChange(x => { _bieluExamineElasticOptions = x; });
-    }
 
     public ElasticsearchClient GetOrCreateClient(string? indexName)
     {
@@ -23,8 +16,8 @@ public class ElasticSearchClientFactory : IElasticSearchClientFactory
         {
             return value;
         }
-        var defaultConfiguration = _bieluExamineElasticOptions.DefaultIndexConfiguration;
-        var indexConfiguration = _bieluExamineElasticOptions.IndexConfigurations.FirstOrDefault(x => x.Name == indexName);
+        var defaultConfiguration = examineElasticOptions.CurrentValue.DefaultIndexConfiguration;
+        var indexConfiguration = examineElasticOptions.CurrentValue.IndexConfigurations.FirstOrDefault(x => x.Name == indexName);
         if (indexConfiguration == null)
         {
             indexConfiguration = defaultConfiguration;
@@ -44,7 +37,7 @@ public class ElasticSearchClientFactory : IElasticSearchClientFactory
                 new ApiKey(indexConfiguration.AuthenticationDetails?.ApiKey)),
             _ => throw new InvalidOperationException("Invalid authentication type")
         };
-        if (_bieluExamineElasticOptions.DevMode)
+        if (examineElasticOptions.CurrentValue.DevMode)
         {
             connectionSettings.EnableDebugMode();
         }

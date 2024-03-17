@@ -38,7 +38,7 @@ public class AzureSearchService(IAzureSearchClientFactory factory, IIndexStateSe
     public IEnumerable<string>? GetCurrentIndexNames(string examineIndexName)
     {
         var state = service.GetIndexState(examineIndexName);
-        return GetIndexesAssignedToAlias(GetSearchClient(examineIndexName), state.IndexAlias);
+        return GetIndexesAssignedToAlias(GetIndexingClient(examineIndexName), state.IndexAlias);
     }
     public void CreateIndex(string examineIndexName, string analyzer,  ReadOnlyFieldDefinitionCollection properties)
     {
@@ -81,20 +81,15 @@ public class AzureSearchService(IAzureSearchClientFactory factory, IIndexStateSe
             CreateIndex(examineIndexName, fieldsMapping);
         }
     }
-    private static List<string>? GetIndexesAssignedToAlias(SearchClient client, string? aliasName)
+    private static List<string>? GetIndexesAssignedToAlias(SearchIndexClient client, string? aliasName)
     {
         ArgumentNullException.ThrowIfNull(aliasName);
 
-        var aliasExists = client..Exists(aliasName).Exists;
-        if (aliasExists)
+        var aliasExists = client.GetAlias(aliasName);
+        if (aliasExists.HasValue && aliasExists.Value.Indexes.Count > 0)
         {
-            var indexesMappedToAlias = client.Indices.Get(aliasName).Indices;
-            if (indexesMappedToAlias.Count > 0)
-            {
-                return indexesMappedToAlias?.Keys?.Select(x => x.ToString())?.ToList();
-            }
+            return aliasExists.Value.Indexes.Select(x => x).ToList();
         }
-
         return new List<string>();
     }
     private SearchClient GetSearchClient(string examineIndexName) => factory.GetOrCreateSearchClient(examineIndexName);

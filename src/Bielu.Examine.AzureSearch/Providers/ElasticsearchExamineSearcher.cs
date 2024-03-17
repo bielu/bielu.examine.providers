@@ -5,7 +5,6 @@ using Bielu.Examine.Core.Queries;
 using Bielu.Examine.Core.Services;
 using Bielu.Examine.Elasticsearch.Configuration;
 using Bielu.Examine.Elasticsearch.Extensions;
-using Bielu.Examine.Elasticsearch.Helpers;
 using Bielu.Examine.Elasticsearch.Model;
 using Bielu.Examine.Elasticsearch.Services;
 using Examine;
