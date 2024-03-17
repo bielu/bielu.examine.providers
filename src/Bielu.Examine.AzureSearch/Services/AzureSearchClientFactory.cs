@@ -44,7 +44,7 @@ public class AzureSearchClientFactory(IOptionsMonitor<BieluExamineAzureSearchOpt
         var getState = indexStateService.GetIndexState(indexName);
         var searchClientOptions = indexConfiguration.AuthenticationDetails.AuthenticationType switch
         {
-            AuthenticationType.AzureKeyCredential => new SearchClient(new Uri(indexConfiguration.AuthenticationDetails.EndPoint), getState.CurrentIndexName, new AzureKeyCredential(indexConfiguration.AuthenticationDetails.QueryApiKey)),
+            AuthenticationType.AzureKeyCredential => new SearchClient(new Uri(indexConfiguration.AuthenticationDetails.EndPoint), getState.IndexAlias, new AzureKeyCredential(indexConfiguration.AuthenticationDetails.QueryApiKey)),
             AuthenticationType.TokenCredential => throw new NotImplementedException("TokenCredential is not implemented yet"),
             _ => throw new InvalidOperationException("Invalid authentication type")
         };

@@ -120,49 +120,37 @@ public class AzureSearchService(IAzureSearchClientFactory factory, IIndexStateSe
         if (state.Reindexing)
         {
             state.CurrentTemporaryIndexName = indexName;
+            return;
         }
-        else
-        {
-            state.CurrentIndexName = indexName;
-        }
-        //assigned current indexName
-        var index = client.Indices.Create(indexName, c => c
-            .Mappings(ms => ms.Dynamic(DynamicMapping.Runtime)
-                .Properties<ElasticDocument>(descriptor =>
-                    fieldsMapping(descriptor)
-                )
-            )
-        );
-        var aliasExists = client.Indices.Exists(state.IndexAlias).Exists;
+        state.CurrentIndexName = indexName;
+        var aliasState = client.GetAlias(state.IndexAlias);
+        var aliasExists = aliasState.Value != null && aliasState.Value.Indexes.Count > 0;
 
         var indexesMappedToAlias = aliasExists
             ? GetIndexesAssignedToAlias(client, indexName).ToList()
             : new List<String>();
-        if (!aliasExists)
+        if (!aliasExists || aliasState.Value?.Indexes != null && (aliasState.Value?.Indexes).All(x => x != state.CurrentIndexName))
         {
-            var createAlias = client.Indices.PutAlias(indexName, state.IndexAlias);
+            var createAlias =  client.CreateOrUpdateAlias(state.IndexAlias, new SearchAlias(state.IndexAlias, state.CurrentIndexName));
         }
 
 
     }
     public IEnumerable<string>? GetPropertiesNames(string examineIndexName)
     {
-        var client = GetSearchClient(examineIndexName);
-        var state = service.GetIndexState(examineIndexName);
+        var client = GetIndexingClient(examineIndexName);
 
-        var indexesMappedToAlias = GetIndexesAssignedToAlias(client, state.IndexAlias).ToList();
+        var indexesMappedToAlias = GetIndexesAssignedToAlias(client, examineIndexName).ToList();
         if (indexesMappedToAlias.Count <= 0)
         {
             return null;
         }
-        GetMappingResponse response =
-            client.Indices.GetMapping(mapping => mapping.Indices(indexesMappedToAlias[0]));
-        var properties = response.GetMappingFor(indexesMappedToAlias[0]).Properties;
-        return properties.Select(x => x.Key.Name).ToList();
+        var index = client.GetIndex(indexesMappedToAlias.FirstOrDefault()).Value;
+        return index.Fields.Select(x => x.Name).ToList();
     }
     public IEnumerable<ExamineProperty>? GetProperties(string examineIndexName)
     {
-        var client = GetSearchClient(examineIndexName);
+        var client = GetIndexingClient(examineIndexName);
         var state = service.GetIndexState(examineIndexName);
 
         var indexesMappedToAlias = GetIndexesAssignedToAlias(client, state.IndexAlias).ToList();
@@ -170,52 +158,33 @@ public class AzureSearchService(IAzureSearchClientFactory factory, IIndexStateSe
         {
             return null;
         }
-        GetMappingResponse response =
-            client.Indices.GetMapping(mapping => mapping.Indices(indexesMappedToAlias[0]));
-        var properties = response.GetMappingFor(indexesMappedToAlias[0]).Properties;
-        return properties.Select(x => new ExamineProperty()
+        var index = client.GetIndex(indexesMappedToAlias.FirstOrDefault()).Value;
+
+        return index.Fields.Select(x => new ExamineProperty()
         {
-            Key = x.Key.Name, Type = x.Value.Type.ToString()
+            Key = x.Name, Type = x.Type.ToString()
         }).ToList();
     }
-    public AzureSearchSearchResults Search(string examineIndexName, SearchRequestDescriptor<ElasticDocument> searchDescriptor)
-    {
-        var client = GetSearchClient(examineIndexName);
-        SearchResponse<ElasticDocument>
-            searchResult = client.Search<ElasticDocument>(searchDescriptor);
-        return searchResult.ConvertToSearchResults();
-    }
-    public AzureSearchSearchResults Search(string examineIndexName, SearchRequest<Document> searchDescriptor)
-    {
-        var client = GetClient(examineIndexName);
-        SearchResponse<ElasticDocument>
-            searchResult = client.Search<ElasticDocument>(searchDescriptor);
-        return searchResult.ConvertToSearchResults();
-    }
+
     public void SwapTempIndex(string? examineIndexName)
     {
         var client = GetIndexingClient(examineIndexName);
         var state = service.GetIndexState(examineIndexName);
         var oldIndexes = GetIndexesAssignedToAlias(client, state.IndexAlias);
-        var bulkAliasResponse = client.Indices.UpdateAliases(x => x.Actions(a => a.Add(add => add.Index(state.CurrentTemporaryIndexName).Alias(state.IndexAlias))));
+        var bulkAliasResponse = client.CreateOrUpdateAlias(state.IndexAlias, new SearchAlias(state.IndexAlias, state.CurrentTemporaryIndexName));
         state.CurrentIndexName = state.CurrentTemporaryIndexName;
         state.CurrentTemporaryIndexName = null;
         state.Reindexing = false;
         state.CreatingNewIndex = false;
         foreach (var index in oldIndexes)
         {
-            if (state.CurrentIndexName == index)
-            {
-                continue;
-            }
-            client.Indices.Delete(index);
+            client.DeleteIndex(index);
         }
-        client.Indices.DeleteAlias(state.CurrentIndexName, state.TempIndexAlias);
     }
     public long IndexBatch(string? examineIndexName, IEnumerable<ValueSet> values)
     {
         var totalResults = 0L;
-        var client = GetClient(examineIndexName);
+        var client = GetSearchClient(examineIndexName);
         var state = service.GetIndexState(examineIndexName);
         if (!IndexExists(examineIndexName))
         {
@@ -225,44 +194,40 @@ public class AzureSearchService(IAzureSearchClientFactory factory, IIndexStateSe
         {
             return 0;
         }
-        var batch = ToElasticSearchDocs(values, state.Reindexing ? state.CurrentTemporaryIndexName : state.CurrentIndexName);
-        var indexResult = client.Bulk(batch);
-        totalResults += indexResult.Items.Count;
+        var batch = ToElasticSearchDocs(values);
+        var indexResult = client.UploadDocuments(batch);
+        totalResults += indexResult.Value.Results.Count;
         return totalResults;
     }
     public long DeleteBatch(string? examineIndexName, IEnumerable<string> itemIds)
     {
-        var client = GetClient(examineIndexName);
+        var client = GetSearchClient(examineIndexName);
         var state = service.GetIndexState(examineIndexName);
-        var descriptor = new BulkRequestDescriptor();
-        foreach (var id in itemIds)
-        {
-            descriptor.Delete(id, index => index.Index(state.CurrentIndexName));
-        }
-        client.Bulk(descriptor);
-        return itemIds.Count();
+        var delete= client.DeleteDocuments("Id", itemIds);
+
+        return delete.Value.Results.Count;
     }
     public int GetDocumentCount(string? examineIndexName)
     {
-        var client = GetClient(examineIndexName);
         var state = service.GetIndexState(examineIndexName);
+        var client = GetSearchClient(state.IndexAlias);
 
-        return (int)client.Count(index => index.Index(state.CurrentIndexName)).Count;
+        return (int)client.GetDocumentCount();
     }
     public bool HealthCheck(string? examineIndexNam)
     {
-        var client = GetClient(examineIndexNam);
-        return client.Cluster.Health().Status == HealthStatus.Green || client.Cluster.Health().Status == HealthStatus.Yellow;
-
+        var client = GetIndexingClient(examineIndexNam);
+        var index=client.GetIndex(examineIndexNam);
+        return index.HasValue && index.Value.Fields.Any();
     }
     public IQuery CreateQuery(string name, string? indexAlias, string category, BooleanOperation defaultOperation) => new BieluExamineQuery(name, indexAlias, new ElasticSearchQueryParser(LuceneVersion.LUCENE_CURRENT, GetPropertiesNames(name).ToArray(), new StandardAnalyzer(LuceneVersion.LUCENE_48)), this, loggerFactory, loggerFactory.CreateLogger<BieluExamineQuery>(), category, new LuceneSearchOptions(), defaultOperation);
     private static string CreateIndexName(string indexAlias)
     {
         return $"{indexAlias}_{DateTime.UtcNow:yyyyMMddHHmmss}";
     }
-    private BulkRequestDescriptor ToElasticSearchDocs(IEnumerable<ValueSet> docs, string? indexTarget)
+    private List<ElasticDocument> ToElasticSearchDocs(IEnumerable<ValueSet> docs)
     {
-        var descriptor = new BulkRequestDescriptor();
+        var descriptor = new List<ElasticDocument>();
 
 
         foreach (var d in docs)
@@ -291,7 +256,7 @@ public class AzureSearchService(IAzureSearchClientFactory factory, IIndexStateSe
 
                     var docArgs = new Elasticsearch.Events.DocumentWritingEventArgs(d, ad);
                     // OnDocumentWriting(docArgs);
-                    descriptor = descriptor.Index<ElasticDocument>(ad, indexTarget, indexingNodeDataArgs => indexingNodeDataArgs.Index(indexTarget).Id(ad["Id"].ToString()));
+                    descriptor.Add(ad);
                 }
             }
             catch (Exception e)
