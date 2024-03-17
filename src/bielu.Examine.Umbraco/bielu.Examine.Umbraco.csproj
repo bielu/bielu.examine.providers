@@ -8,10 +8,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="Indexers\" />
-    </ItemGroup>
-
-    <ItemGroup>
       <PackageReference Include="Umbraco.Cms.Infrastructure">
       </PackageReference>
       <PackageReference Include="Umbraco.Cms.Api.Delivery">

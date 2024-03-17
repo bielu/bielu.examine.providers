@@ -7,5 +7,12 @@
                  start-page="api-docs.md">
 
     <toc-element topic="api-docs.md"/>
-    <toc-element topic="Configuration.md" />
+    <toc-element topic="Instalation.md"/>
+    <toc-element topic="Providers.md">
+        <toc-element topic="Configuration.md"/>
+        <toc-element topic="Azure-Search.md"/>
+    </toc-element>
+    <toc-element topic="Additional-Extensions.md">
+    </toc-element>
+    <toc-element topic="Forms-Provider.md"/>
 </instance-profile>
