@@ -18,7 +18,7 @@ public class ElasticSearchClientFactory(IOptionsMonitor<BieluExamineElasticOptio
         }
         var defaultConfiguration = examineElasticOptions.CurrentValue.DefaultIndexConfiguration;
         var indexConfiguration = examineElasticOptions.CurrentValue.IndexConfigurations.FirstOrDefault(x => x.Name == indexName);
-        if (indexConfiguration == null)
+        if (indexConfiguration == null || !indexConfiguration.OverrideClientConfiguration)
         {
             indexConfiguration = defaultConfiguration;
             indexName = BieluExamineElasticConstants.DefaultClient;

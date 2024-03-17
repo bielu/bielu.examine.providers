@@ -10,7 +10,7 @@ public static class BieluExamineConfiguratorExtensions
 
     public static BieluExamineConfigurator AddFormProvider(this BieluExamineConfigurator builder)
     {
-        builder.ServiceCollection.AddBieluExamineIndex<UmbracoFormsElasticIndex,IIndexStateService>(global::Umbraco.Forms.Core.Constants.ExamineIndex.RecordIndexName);
+        builder.ServiceCollection.AddBieluExamineIndex<BieluExamineUmbracoFormsIndex>(global::Umbraco.Forms.Core.Constants.ExamineIndex.RecordIndexName);
         return builder;
     }
 }

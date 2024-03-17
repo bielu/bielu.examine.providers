@@ -13,7 +13,7 @@ using Umbraco.Extensions;
 
 namespace bielu.Examine.Umbraco.Indexers.Indexers
 {
-    public class ElasticSearchUmbracoIndex(string? name, ILoggerFactory loggerFactory, IRuntime runtime, ILogger<ElasticSearchUmbracoIndex> logger,ISearchService searchService, IIndexStateService stateService, IBieluSearchManager manager, IOptionsMonitor<LuceneDirectoryIndexOptions> indexOptions) : ElasticSearchBaseIndex(name, logger, loggerFactory, searchService,stateService,manager,indexOptions), IBieluExamineIndex, IIndexDiagnostics
+    public class BieluExamineUmbracoIndex(string? name, ILoggerFactory loggerFactory, IRuntime runtime, ILogger<IBieluExamineIndex> logger,ISearchService searchService, IIndexStateService stateService, IBieluSearchManager manager, IOptionsMonitor<LuceneDirectoryIndexOptions> indexOptions) : ElasticSearchBaseIndex(name, logger, loggerFactory, searchService,stateService,manager,indexOptions), IBieluExamineIndex, IUmbracoIndex, IIndexDiagnostics
     {
 
         public const string SpecialFieldPrefix = "__";

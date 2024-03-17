@@ -10,8 +10,8 @@ public class ExamineManager<T>(IEnumerable<IIndex> indexes, IEnumerable<ISearche
     {
         if(options.Enabled)
         {
-            return indexes.Where(x=>!x.GetType().GetInterfaces().Contains(typeof(T)));
+            return indexes.Where(x=>x.GetType().GetInterfaces().Contains(typeof(T)));
         }
-        return indexes.Where(x=>x.GetType().GetInterfaces().Contains(typeof(T)));
+        return indexes.Where(x=>!x.GetType().GetInterfaces().Contains(typeof(T)));
     }
 }

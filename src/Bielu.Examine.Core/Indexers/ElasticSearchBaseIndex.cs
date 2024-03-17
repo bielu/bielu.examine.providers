@@ -8,7 +8,7 @@ using Microsoft.Extensions.Options;
 
 namespace Bielu.Examine.Core.Indexers;
 
-public class ElasticSearchBaseIndex(string? name, ILogger<ElasticSearchBaseIndex> logger, ILoggerFactory loggerFactory, ISearchService elasticSearchService, IIndexStateService indexStateService, IBieluSearchManager bieluSearchManager, IOptionsMonitor<LuceneDirectoryIndexOptions> indexOptions) : BaseIndexProvider(loggerFactory, name, indexOptions), IBieluExamineIndex, IDisposable
+public class ElasticSearchBaseIndex(string? name, ILogger<IBieluExamineIndex> logger, ILoggerFactory loggerFactory, ISearchService elasticSearchService, IIndexStateService indexStateService, IBieluSearchManager bieluSearchManager, IOptionsMonitor<LuceneDirectoryIndexOptions> indexOptions) : BaseIndexProvider(loggerFactory, name, indexOptions), IBieluExamineIndex, IDisposable
 {
     private bool? _exists;
     private ExamineIndexState IndexState => indexStateService.GetIndexState(name);

@@ -22,33 +22,34 @@ public static class UmbracoBuilderExtensions
         var config= BieluExamineConfiguration.Instance;
         if (config.FieldAnalyzerFieldMapping.TryGetValue("keyword", out var keyword))
         {
-            keyword.Add(ElasticSearchUmbracoIndex.IndexPathFieldName);
+            keyword.Add(BieluExamineUmbracoIndex.IndexPathFieldName);
         }
         builder.Services.AddUnique<IIndexRebuilder, ElasticsearchExamineIndexRebuilder>();
 
         builder.Services.AddSingleton<IIndexDiagnosticsFactory, LuceneIndexDiagnosticsFactory>();
-        builder.Services.AddBieluExamineIndex<UmbracoContentElasticsearchIndex,IIndexStateService>(global::Umbraco.Cms.Core.Constants.UmbracoIndexes
+        builder.Services.AddBieluExamineIndex<BieluExamineUmbracoContentIndex>(global::Umbraco.Cms.Core.Constants.UmbracoIndexes
             .InternalIndexName);
-        builder.Services.AddBieluExamineIndex<UmbracoContentElasticsearchIndex,IIndexStateService>(global::Umbraco.Cms.Core.Constants.UmbracoIndexes
+        builder.Services.AddBieluExamineIndex<BieluExamineUmbracoContentIndex>(global::Umbraco.Cms.Core.Constants.UmbracoIndexes
             .ExternalIndexName);
-        builder.Services.AddBieluExamineIndex<UmbracoContentElasticsearchIndex,IIndexStateService>(global::Umbraco.Cms.Core.Constants.UmbracoIndexes
+        builder.Services.AddBieluExamineIndex<BieluExamineUmbracoContentIndex>(global::Umbraco.Cms.Core.Constants.UmbracoIndexes
             .MembersIndexName);
-        builder.Services.AddBieluExamineIndex<UmbracoDeliveryApiContentElasticSearchIndex,IIndexStateService>(global::Umbraco.Cms.Core.Constants.UmbracoIndexes
+        builder.Services.AddBieluExamineIndex<BieluExamineUmbracoDeliveryApiContentIndex>(global::Umbraco.Cms.Core.Constants.UmbracoIndexes
             .DeliveryApiContentIndexName);
         builder.Services.AddSingleton<IExamineManager, ExamineManager<IBieluExamineIndex>>();
         return builder;
     }
-    public static IServiceCollection AddBieluExamineIndex<TIndex,  TIndexStateService>(this IServiceCollection serviceCollection, string name) where TIndex : class, IBieluExamineIndex
+    public static IServiceCollection AddBieluExamineIndex<TIndex>(this IServiceCollection serviceCollection, string name) where TIndex : class, IBieluExamineIndex
     {
         return serviceCollection.AddSingleton<IIndex>(services =>
         {
             IRuntime runtime = services.GetRequiredService<IRuntime>();
             ILogger<IBieluExamineIndex> logger = services.GetRequiredService<ILogger<IBieluExamineIndex>>();
             ILoggerFactory loggerFactory = services.GetRequiredService<ILoggerFactory>();
-            TIndexStateService stateService = services.GetRequiredService<TIndexStateService>();
+            IIndexStateService stateService = services.GetRequiredService<IIndexStateService>();
             ISearchService indexsearchService = services.GetRequiredService<ISearchService>();
+            IBieluSearchManager searchManager = services.GetRequiredService<IBieluSearchManager>();
             IOptionsMonitor<LuceneDirectoryIndexOptions> indexOptions = services.GetRequiredService<IOptionsMonitor<LuceneDirectoryIndexOptions>>();
-            return (TIndex)ActivatorUtilities.CreateInstance(services,typeof(TIndex) ,(object)name, (object)loggerFactory, runtime, logger, indexsearchService, stateService, indexOptions);
+            return (TIndex)ActivatorUtilities.CreateInstance(services,typeof(TIndex) ,(object)name, (object)loggerFactory, runtime, logger, indexsearchService, stateService,searchManager, indexOptions);
         });
     }
 }
