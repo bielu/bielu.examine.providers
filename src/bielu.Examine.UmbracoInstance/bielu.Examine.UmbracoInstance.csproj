@@ -7,19 +7,20 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Umbraco.Cms" Version="13.1.0" />
-    <PackageReference Include="Umbraco.Forms" Version="13.0.2" />
+    <PackageReference Include="Umbraco.Cms" />
+    <PackageReference Include="Umbraco.Forms" />
   </ItemGroup>
 
   <ItemGroup>
     <!-- Opt-in to app-local ICU to ensure consistent globalization APIs across different platforms -->
-    <PackageReference Include="Microsoft.ICU.ICU4C.Runtime" Version="72.1.0.3" />
+    <PackageReference Include="Microsoft.ICU.ICU4C.Runtime" />
     <RuntimeHostConfigurationOption Include="System.Globalization.AppLocalIcu" Value="72.1.0.3" Condition="$(RuntimeIdentifier.StartsWith('linux')) or $(RuntimeIdentifier.StartsWith('win')) or ('$(RuntimeIdentifier)' == '' and !$([MSBuild]::IsOSPlatform('osx')))" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Bielu.Examine.ElasticSearch.Umbraco.Forms\Bielu.Examine.ElasticSearch.Umbraco.Forms.csproj" />
-    <ProjectReference Include="..\Bielu.Examine.Elasticsearch.Umbraco\Bielu.Examine.Elasticsearch.Umbraco.csproj" />
+    <ProjectReference Include="..\Bielu.Examine.Elasticsearch\Bielu.Examine.Elasticsearch.csproj" />
+    <ProjectReference Include="..\Bielu.Examine.Umbraco.Forms\Bielu.Examine.Umbraco.Forms.csproj" />
+    <ProjectReference Include="..\bielu.Examine.Umbraco\bielu.Examine.Umbraco.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

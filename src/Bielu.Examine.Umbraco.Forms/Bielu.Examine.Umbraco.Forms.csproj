@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>Bielu.Examine.ElasticSearch.Umbraco.Form</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Umbraco.Forms.Core">
+      </PackageReference>
+      <PackageReference Include="Umbraco.Forms.Examine">
+      </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Bielu.Examine.Core\Bielu.Examine.Core.csproj" />
+      <ProjectReference Include="..\bielu.Examine.Umbraco\bielu.Examine.Umbraco.csproj" />
+    </ItemGroup>
+
+</Project>

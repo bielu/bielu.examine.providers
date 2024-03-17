@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using Bielu.Examine.Core.Models;
 using Bielu.Examine.Elasticsearch.Model;
 using Elastic.Clients.Elasticsearch;
 using Examine;
@@ -8,7 +9,7 @@ namespace Bielu.Examine.Elasticsearch.Extensions;
 
 public static class SearchResponseExtensions
 {
-    public static ElasticSearchSearchResults ConvertToSearchResults(this SearchResponse<ElasticDocument> searchResult)
+    public static ElasticSearchSearchResults ConvertToSearchResults(this SearchResponse<BieluExamineDocument> searchResult)
     {
         if (!searchResult.IsSuccess())
         {

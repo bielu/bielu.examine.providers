@@ -1,5 +1,0 @@
-<Project>
-	<ItemGroup>
-		<UmbracoJsonSchemaFiles Include="$(MSBuildThisFileDirectory)..\Schema\appsettings-schema.UmbracoExamineElasticOptions.json"  />
-	</ItemGroup>
-</Project>

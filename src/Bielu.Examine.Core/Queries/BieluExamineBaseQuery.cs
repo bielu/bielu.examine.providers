@@ -1,4 +1,5 @@
 ﻿using System.Text.RegularExpressions;
+using Bielu.Examine.Core.Models;
 using Examine;
 using Examine.Lucene.Indexing;
 using Examine.Lucene.Search;
@@ -133,9 +134,9 @@ public abstract partial class BieluExamineBaseQuery(
         bool maxInclusive = true)
         => RangeQueryInternal(fields, min, max, minInclusive, maxInclusive);
 
-    public abstract IIndexFieldValueType FromEngineType<TPropertyName, TProperty>(KeyValuePair<TPropertyName, TProperty> propetyField);
+    public abstract IIndexFieldValueType FromEngineType(ExamineProperty propetyField);
 
-    internal abstract BieluExamineBooleanOperation RangeQueryInternal<T>(string[] fields, T? min, T? max,
+    internal abstract BieluExamineBooleanOperationBase RangeQueryInternal<T>(string[] fields, T? min, T? max,
         bool minInclusive = true, bool maxInclusive = true)
         where T : struct;
 
@@ -412,7 +413,7 @@ public abstract partial class BieluExamineBaseQuery(
                 //we'll just manually make it instead below
 
                 //var spans = new List<SpanQuery>();
-                //foreach (var s in fieldValue.Value.Split(' '))
+                //foreach (var s in fieldValue.Type.Split(' '))
                 //{
                 //    spans.Add(new SpanTermQuery(new Term(fieldName, s)));
                 //}

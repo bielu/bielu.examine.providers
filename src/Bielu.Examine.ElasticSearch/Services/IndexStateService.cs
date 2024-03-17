@@ -1,4 +1,6 @@
-﻿using Bielu.Examine.Elasticsearch.Configuration;
+﻿using Bielu.Examine.Core.Models;
+using Bielu.Examine.Core.Services;
+using Bielu.Examine.Elasticsearch.Configuration;
 using Bielu.Examine.Elasticsearch.Model;
 using Microsoft.Extensions.Options;
 

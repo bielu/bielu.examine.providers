@@ -9,7 +9,7 @@ public class DocumentWritingEventArgs : CancelEventArgs
     /// <summary>
     /// Lucene.NET Document, including all previously added fields
     /// </summary>        
-    public ElasticDocument Document { get; }
+    public BieluExamineDocument Document { get; }
 
     /// <summary>
     /// Fields of the indexer
@@ -22,7 +22,7 @@ public class DocumentWritingEventArgs : CancelEventArgs
     /// </summary>
     /// <param name="valueSet"></param>
     /// <param name="d"></param>
-    public DocumentWritingEventArgs(ValueSet valueSet, ElasticDocument d)
+    public DocumentWritingEventArgs(ValueSet valueSet, BieluExamineDocument d)
     {
         this.Document = d;
         this.ValueSet = valueSet;

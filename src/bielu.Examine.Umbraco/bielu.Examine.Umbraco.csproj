@@ -1,10 +1,29 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-      <IsPackable>False</IsPackable>
+      <IsPackable>True</IsPackable>
     </PropertyGroup>
+
+    <ItemGroup>
+      <Folder Include="Indexers\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Umbraco.Cms.Infrastructure">
+      </PackageReference>
+      <PackageReference Include="Umbraco.Cms.Api.Delivery">
+      </PackageReference>
+      <PackageReference Include="Umbraco.Cms.Examine.Lucene">
+      </PackageReference>
+      <PackageReference Include="Umbraco.Cms.Infrastructure">
+      </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Bielu.Examine.Core\Bielu.Examine.Core.csproj" />
+    </ItemGroup>
 
 </Project>

@@ -1,8 +1,9 @@
-﻿using Bielu.Examine.Elasticsearch.Configuration;
+﻿using Bielu.Examine.Core.Models;
+using Bielu.Examine.Core.Queries;
+using Bielu.Examine.Core.Services;
+using Bielu.Examine.Elasticsearch.Configuration;
 using Bielu.Examine.Elasticsearch.Extensions;
-using Bielu.Examine.Elasticsearch.Helpers;
 using Bielu.Examine.Elasticsearch.Model;
-using Bielu.Examine.Elasticsearch.Queries;
 using Bielu.Examine.Elasticsearch.Services;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Clients.Elasticsearch.IndexManagement;
@@ -17,17 +18,16 @@ using Lucene.Net.Search;
 using Lucene.Net.Util;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using ElasticSearchQuery = Bielu.Examine.Elasticsearch.Queries.ElasticSearchQuery;
 using Query = Elastic.Clients.Elasticsearch.QueryDsl.Query;
 
 namespace Bielu.Examine.Elasticsearch.Providers;
 
-public class ElasticsearchExamineSearcher(string name, string? indexAlias, ILoggerFactory loggerFactory, IElasticsearchService elasticsearchService) : BaseSearchProvider(name), IDisposable
+public class ElasticsearchExamineSearcher(string name, string? indexAlias, ILoggerFactory loggerFactory, ISearchService elasticsearchService) : BaseSearchProvider(name),IBieluExamineSearcher, IDisposable
 {
     public string? IndexAlias => indexAlias;
     private readonly List<SortField> _sortFields = new List<SortField>();
     private string?[] _allFields;
-    private Properties _fieldsMapping;
+    private IEnumerable<ExamineProperty>? _fieldsMapping;
     private bool? _exists;
 
 
@@ -52,14 +52,14 @@ public class ElasticsearchExamineSearcher(string name, string? indexAlias, ILogg
         {
             if (!IndexExists) return _emptyFields;
 
-            IEnumerable<PropertyName> keys = AllProperties.Select(x => x.Key);
+            IEnumerable<string> keys = AllProperties.Select(x => x.Key);
 
-            _allFields = keys.Select(x => x.Name).ToArray();
+            _allFields = keys.ToArray();
             return _allFields;
         }
     }
 
-    public Properties AllProperties
+    public IEnumerable<ExamineProperty> AllProperties
     {
         get
         {
@@ -83,10 +83,10 @@ public class ElasticsearchExamineSearcher(string name, string? indexAlias, ILogg
         return DoSearch(query, options);
     }
 
-    private ElasticSearchSearchResults DoSearch(Query query, QueryOptions options,
-        SortOptionsDescriptor<ElasticDocument>? optionsDescriptor = null)
+    private BieluExamineSearchResults DoSearch(Query query, QueryOptions options,
+        SortOptionsDescriptor<BieluExamineDocument>? optionsDescriptor = null)
     {
-        SearchRequestDescriptor<ElasticDocument> searchDescriptor = new SearchRequestDescriptor<ElasticDocument>();
+        SearchRequestDescriptor<BieluExamineDocument> searchDescriptor = new SearchRequestDescriptor<BieluExamineDocument>();
         searchDescriptor.Index(indexAlias)
             .Query(query);
         if (optionsDescriptor != null)
@@ -106,15 +106,12 @@ public class ElasticsearchExamineSearcher(string name, string? indexAlias, ILogg
         get
         {
             if (_parsedValues != null) return _parsedValues;
-            _parsedValues = AllProperties?.Select(x => x.Key.Name)?.ToArray() ?? _emptyFields;
+            _parsedValues = AllProperties?.Select(x => x.Key)?.ToArray() ?? _emptyFields;
             return _parsedValues;
         }
     }
     public override IQuery CreateQuery(string category = null,
-        BooleanOperation defaultOperation = BooleanOperation.And)
-    {
-        return new ElasticSearchQuery(name,indexAlias,new ElasticSearchQueryParser(LuceneVersion.LUCENE_CURRENT,ParsedProperties,new StandardAnalyzer(LuceneVersion.LUCENE_48)), elasticsearchService,loggerFactory,loggerFactory.CreateLogger<ElasticSearchQuery>() ,category, new LuceneSearchOptions(), defaultOperation );
-    }
+        BooleanOperation defaultOperation = BooleanOperation.And) => elasticsearchService.CreateQuery(name, indexAlias, category, defaultOperation);
  #pragma warning disable CA1816
     public void Dispose() => loggerFactory.Dispose();
  #pragma warning restore CA1816
