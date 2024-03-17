@@ -6,5 +6,6 @@ This bundle of examine providers allows you to switch seemlessly underhood engin
 ## Current Provider in work
 - Elasticsearch
 - AWS OpenSearch
+- Azure Search (Aka AI Search)
 ## Docs
 Please check https://examine.bielu.pl
