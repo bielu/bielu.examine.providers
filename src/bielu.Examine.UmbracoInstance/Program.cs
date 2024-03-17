@@ -9,10 +9,10 @@ builder.CreateUmbracoBuilder()
     .AddWebsite()
     .AddDeliveryApi()
     .AddComposers()
-    .AddBieluExamineForUmbraco(x =>
+    .AddBieluExamineForUmbraco(bieluExamineConfigurator =>
     {
-        x.AddFormProvider();
-        x.AddElasticsearchServices();
+        bieluExamineConfigurator.AddFormProvider();
+        bieluExamineConfigurator.AddElasticsearchServices();
     })
     .Build();
 

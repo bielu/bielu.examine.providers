@@ -12,7 +12,8 @@ internal sealed class Program
     static readonly IList<Assembly> _assemblies = new List<Assembly>()
     {
         typeof(BieluExamineElasticOptions).Assembly,
-        typeof(BieluExamineOptions).Assembly
+        typeof(BieluExamineOptions).Assembly,
+        typeof(BieluExamineAzureSearchOptions).Assembly,
     };
 
     public static async Task Main(string[] args)
