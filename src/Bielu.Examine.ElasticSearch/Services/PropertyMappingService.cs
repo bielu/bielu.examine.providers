@@ -60,19 +60,19 @@ public class PropertyMappingService(BieluExamineConfiguration configuration) : I
         ReadOnlyFieldDefinitionCollection fieldDefinitionCollection, string analyzer)
     {
 
-        descriptor.Keyword(s => "Id");
-        descriptor.Keyword(s => ExamineFieldNames.ItemIdFieldName.FormatFieldName());
-        descriptor.Keyword(s => ExamineFieldNames.ItemTypeFieldName.FormatFieldName());
-        descriptor.Keyword(s => ExamineFieldNames.CategoryFieldName.FormatFieldName());
+        descriptor.Keyword( "Id");
+        descriptor.Keyword( ExamineFieldNames.ItemIdFieldName.FormatFieldName());
+        descriptor.Keyword( ExamineFieldNames.ItemTypeFieldName.FormatFieldName());
+        descriptor.Keyword( ExamineFieldNames.CategoryFieldName.FormatFieldName());
         foreach (var mapping in configuration.FieldAnalyzerFieldMapping)
         {
             foreach (var propertyName in mapping.Value)
             {
                 descriptor = mapping.Key switch
                 {
-                    "keyword" => descriptor.Keyword(s => propertyName),
-                    "text" => descriptor.Text(s => propertyName, configure => configure.Analyzer(FromLuceneAnalyzer(analyzer))), //todo: implement other types
-                    _ => descriptor.Text(s => propertyName, configure => configure.Analyzer(FromLuceneAnalyzer(analyzer)))
+                    "keyword" => descriptor.Keyword(propertyName),
+                    "text" => descriptor.Text( propertyName, configure => configure.Analyzer(FromLuceneAnalyzer(analyzer))), //todo: implement other types
+                    _ => descriptor.Text(propertyName, configure => configure.Analyzer(FromLuceneAnalyzer(analyzer)))
                 };
             }
         }
