@@ -17,6 +17,7 @@ using Lucene.Net.Analysis.Standard;
 using Lucene.Net.Documents;
 using Lucene.Net.Util;
 using Microsoft.Extensions.Logging;
+using MatchType = Elastic.Clients.Elasticsearch.Mapping.MatchType;
 using Query = Lucene.Net.Search.Query;
 
 namespace Bielu.Examine.Elasticsearch.Services;
@@ -137,8 +138,24 @@ public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexSta
         }
         //assigned current indexName
         var index = client.Indices.Create(indexName, c => c
-            .Mappings(ms => ms.Dynamic(DynamicMapping.Runtime)
-                .Properties<BieluExamineDocument>(descriptor =>
+            .Mappings(ms => ms.Dynamic(DynamicMapping.Runtime).DynamicTemplates(
+                new List<IDictionary<string, DynamicTemplate>>(){
+                    new Dictionary<string, DynamicTemplate>()
+                    {
+                        {
+                            "IndexAsTextUntilRaw", new DynamicTemplate()
+                            {
+                                MatchPattern = MatchType.Regex,
+                                PathMatch = "^((?!raw).)*$",
+                                Mapping = new TextProperty()
+                            }
+                        }
+                    }
+
+                }
+
+    )
+    .Properties<BieluExamineDocument>(descriptor =>
                     fieldsMapping(descriptor)
                 )
             )

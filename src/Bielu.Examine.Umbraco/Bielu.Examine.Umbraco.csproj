@@ -5,6 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
       <IsPackable>True</IsPackable>
+      <RootNamespace>bielu.Examine.Umbraco</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>

@@ -20,7 +20,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Bielu.Examine.Elasticsearch\Bielu.Examine.Elasticsearch.csproj" />
     <ProjectReference Include="..\Bielu.Examine.Umbraco.Forms\Bielu.Examine.Umbraco.Forms.csproj" />
-    <ProjectReference Include="..\bielu.Examine.Umbraco\bielu.Examine.Umbraco.csproj" />
+    <ProjectReference Include="..\Bielu.Examine.Umbraco\Bielu.Examine.Umbraco.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

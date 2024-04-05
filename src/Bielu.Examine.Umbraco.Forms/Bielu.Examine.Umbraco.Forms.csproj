@@ -16,7 +16,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Bielu.Examine.Core\Bielu.Examine.Core.csproj" />
-      <ProjectReference Include="..\bielu.Examine.Umbraco\bielu.Examine.Umbraco.csproj" />
+      <ProjectReference Include="..\Bielu.Examine.Umbraco\Bielu.Examine.Umbraco.csproj" />
     </ItemGroup>
 
 </Project>

@@ -8,9 +8,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SchemaGenerator", "SchemaGe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "bielu.Examine.UmbracoInstance", "bielu.Examine.UmbracoInstance\bielu.Examine.UmbracoInstance.csproj", "{D499496B-12AE-4823-8BC4-B575568FA5A5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "bielu.Examine.Umbraco", "bielu.Examine.Umbraco\bielu.Examine.Umbraco.csproj", "{7D59D9BF-4194-4569-B35A-6F0ACF9F0BC3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bielu.Examine.Umbraco", "Bielu.Examine.Umbraco\Bielu.Examine.Umbraco.csproj", "{7D59D9BF-4194-4569-B35A-6F0ACF9F0BC3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "bielu.Examine.OpenSearch", "bielu.Examine.OpenSearch\bielu.Examine.OpenSearch.csproj", "{17D3775E-4FDB-466D-A5FC-7E636C9D3016}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bielu.Examine.OpenSearch", "Bielu.Examine.OpenSearch\Bielu.Examine.OpenSearch.csproj", "{17D3775E-4FDB-466D-A5FC-7E636C9D3016}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionsFiles", "SolutionsFiles", "{AE8F8534-8D86-4107-9962-71C665CD3724}"
 	ProjectSection(SolutionItems) = preProject
