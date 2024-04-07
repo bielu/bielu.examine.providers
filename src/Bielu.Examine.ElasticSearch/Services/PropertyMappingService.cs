@@ -1,4 +1,4 @@
-﻿using Bielu.Examine.Core.Configuration;
+using Bielu.Examine.Core.Configuration;
 using Bielu.Examine.Core.Extensions;
 using Bielu.Examine.Elasticsearch.Model;
 using Elastic.Clients.Elasticsearch.Mapping;
@@ -60,7 +60,7 @@ public class PropertyMappingService(BieluExamineConfiguration configuration) : I
         ReadOnlyFieldDefinitionCollection fieldDefinitionCollection, string analyzer)
     {
 
-        descriptor.Keyword( "Id");
+        //descriptor.Keyword( "Id");
         descriptor.Keyword( ExamineFieldNames.ItemIdFieldName.FormatFieldName());
         descriptor.Keyword( ExamineFieldNames.ItemTypeFieldName.FormatFieldName());
         descriptor.Keyword( ExamineFieldNames.CategoryFieldName.FormatFieldName());

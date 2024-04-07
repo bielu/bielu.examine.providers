@@ -1,4 +1,4 @@
-﻿using Bielu.Examine.Core.Extensions;
+using Bielu.Examine.Core.Extensions;
 using Bielu.Examine.Core.Models;
 using Bielu.Examine.Core.Queries;
 using Bielu.Examine.Core.Regex;
@@ -304,7 +304,7 @@ public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexSta
                     //this is just a dictionary
                     var ad = new BieluExamineDocument
                     {
-                        ["Id"] = d.Id,
+                        //["Id"] = d.Id,
                         [ExamineFieldNames.ItemIdFieldName.FormatFieldName()] = d.Id,
                         [ExamineFieldNames.ItemTypeFieldName.FormatFieldName()] = d.ItemType,
                         [ExamineFieldNames.CategoryFieldName.FormatFieldName()] = d.Category
@@ -318,7 +318,7 @@ public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexSta
 
                     var docArgs = new Events.DocumentWritingEventArgs(d, ad);
                     // OnDocumentWriting(docArgs);
-                    descriptor = descriptor.Index<BieluExamineDocument>(ad, indexTarget, indexingNodeDataArgs => indexingNodeDataArgs.Index(indexTarget).Id(ad["Id"].ToString()));
+                    descriptor = descriptor.Index<BieluExamineDocument>(ad, indexTarget, indexingNodeDataArgs => indexingNodeDataArgs.Index(indexTarget).Id(ad["id"].ToString()));
                 }
             }
             catch (Exception e)
