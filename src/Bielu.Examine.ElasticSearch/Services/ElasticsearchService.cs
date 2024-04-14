@@ -51,7 +51,7 @@ public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexSta
     public void CreateIndex(string examineIndexName, string analyzer,  ReadOnlyFieldDefinitionCollection properties)
     {
         var fieldsMapping = propertyMappingService.GetElasticSearchMapping(properties, analyzer);
-        CreateIndex(examineIndexName, fieldsMapping);
+        CreateIndex(examineIndexName,analyzer, fieldsMapping);
     }
     public BieluExamineSearchResults Search(string examineIndexName, QueryOptions? options, Query query)
     {
