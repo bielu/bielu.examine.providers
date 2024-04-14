@@ -7,6 +7,7 @@ public class ExamineIndexState
     public string? CurrentTemporaryIndexName { get; set; }
     public string TempIndexAlias { get; set; }
     public string? IndexName { get; set; }
+    public string? Analyzer { get; set; }
     public bool Exist { get; set; }
     public bool CreatingNewIndex { get; set; }
     public bool Reindexing { get; set; }
