@@ -19,6 +19,8 @@ public class IndexStateService(IOptionsMonitor<BieluExamineElasticOptions> exami
         var configuration = elasticConfig.IndexConfigurations.FirstOrDefault(x => x.Name.Equals(indexName, StringComparison.OrdinalIgnoreCase));
         state = new ExamineIndexState();
         state.IndexName = indexName;
+
+        state.Analyzer = configuration?.Analyzer;
         var prefix=(configuration?.Prefix?.ToLowerInvariant() ?? elasticConfig.DefaultIndexConfiguration?.Prefix)?.ToLowerInvariant();
         if (!string.IsNullOrWhiteSpace(prefix))
         {
