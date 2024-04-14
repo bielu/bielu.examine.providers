@@ -89,14 +89,14 @@ public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexSta
             {
                 var state = service.GetIndexState(examineIndexName);
                 state.Reindexing = true;
-                CreateIndex(examineIndexName, fieldsMapping);
+                CreateIndex(examineIndexName,analyzer, fieldsMapping);
             }
         }
         else
         {
             var state = service.GetIndexState(examineIndexName);
             state.Reindexing = true;
-            CreateIndex(examineIndexName, fieldsMapping);
+            CreateIndex(examineIndexName,analyzer, fieldsMapping);
         }
     }
     private static List<string>? GetIndexesAssignedToAlias(ElasticsearchClient client, string? aliasName)
@@ -117,7 +117,7 @@ public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexSta
     {
         return factory.GetOrCreateClient(examineIndexName);
     }
-    public void CreateIndex(string examineIndexName, Func<PropertiesDescriptor<BieluExamineDocument>, PropertiesDescriptor<BieluExamineDocument>> fieldsMapping)
+    public void CreateIndex(string examineIndexName, string analyzer, Func<PropertiesDescriptor<BieluExamineDocument>, PropertiesDescriptor<BieluExamineDocument>> fieldsMapping)
     {
         var client = GetClient(examineIndexName);
         var state = service.GetIndexState(examineIndexName);
@@ -137,7 +137,7 @@ public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexSta
             state.CurrentIndexName = indexName;
         }
         //assigned current indexName
-        var index = client.Indices.Create(indexName, c => c.Settings(x=>x.Analysis(a=>a.Analyzers(aa=>analyzerMappingService.GetElasticSearchAnalyzerMapping(aa,state.Analyzer))))
+        var index = client.Indices.Create(indexName, c => c.Settings(x=>x.Analysis(a=>a.Analyzers(aa=>analyzerMappingService.GetElasticSearchAnalyzerMapping(aa,state.Analyzer ?? analyzer))))
             .Mappings(ms => ms.Dynamic(DynamicMapping.Runtime).DynamicTemplates(
                 new List<IDictionary<string, DynamicTemplate>>(){
                     new Dictionary<string, DynamicTemplate>()
