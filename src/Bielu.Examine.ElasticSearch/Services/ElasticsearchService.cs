@@ -22,7 +22,7 @@ using Query = Lucene.Net.Search.Query;
 
 namespace Bielu.Examine.Elasticsearch.Services;
 
-public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexStateService service, IPropertyMappingService propertyMappingService, ILogger<ElasticsearchService> logger, ILoggerFactory loggerFactory) : ISearchService
+public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexStateService service, IPropertyMappingService propertyMappingService, IAnalyzerMappingService analyzerMappingService, ILogger<ElasticsearchService> logger, ILoggerFactory loggerFactory) : ISearchService
 {
     public bool IndexExists(string examineIndexName)
     {
@@ -137,7 +137,7 @@ public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexSta
             state.CurrentIndexName = indexName;
         }
         //assigned current indexName
-        var index = client.Indices.Create(indexName, c => c
+        var index = client.Indices.Create(indexName, c => c.Settings(x=>x.Analysis(a=>a.Analyzers(aa=>analyzerMappingService.GetElasticSearchAnalyzerMapping(aa,state.Analyzer))))
             .Mappings(ms => ms.Dynamic(DynamicMapping.Runtime).DynamicTemplates(
                 new List<IDictionary<string, DynamicTemplate>>(){
                     new Dictionary<string, DynamicTemplate>()
