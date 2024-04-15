@@ -32,7 +32,7 @@ public class ElasticSearchBaseIndex(
 
     public string? IndexAlias => IndexState.IndexAlias;
     private string? TempindexAlias => IndexState.TempIndexAlias;
-    public string? Analyzer { get; }
+    public string? Analyzer => IndexState.Analyzer;
 
 
     protected virtual void OnDocumentWriting(DocumentWritingEventArgs docArgs)
@@ -46,13 +46,20 @@ public class ElasticSearchBaseIndex(
 
     protected override void PerformIndexItems(IEnumerable<ValueSet> values, Action<IndexOperationEventArgs> onComplete)
     {
+        List<ValueSet> listValues = [];
+
         foreach (var value in values)
         {
             var indexingNodeDataArgs = new IndexingItemEventArgs(this, value);
             OnTransformingIndexValues(indexingNodeDataArgs);
+            if (!indexingNodeDataArgs.Cancel)
+            {
+                listValues.Add(indexingNodeDataArgs.ValueSet);
+            }
+
         }
 
-        long totalResults = elasticSearchService.IndexBatch(name, values);
+        long totalResults = elasticSearchService.IndexBatch(name, listValues);
 
         onComplete(new IndexOperationEventArgs(this, (int)totalResults));
     }
