@@ -22,7 +22,10 @@ public class ElasticSearchBaseIndex(
     private bool? _exists;
     private ExamineIndexState IndexState => indexStateService.GetIndexState(name);
     private static readonly object _existsLocker = new object();
-    private IDisposable _unsubscriber = elasticSearchService.Subscribe(this);
+
+    private IDisposable Unsubscriber => elasticSearchService.Subscribe(this);
+
+
     /// <summary>
     /// Occurs when [document writing].
     /// </summary>
@@ -113,16 +116,16 @@ public class ElasticSearchBaseIndex(
     public void Dispose()
 #pragma warning restore CA1816
     {
-        _unsubscriber.Dispose();
+        Unsubscriber.Dispose();
     }
     public virtual void Subscribe(IObservable<TransformingObservable> provider)
     {
-        _unsubscriber = provider.Subscribe(this);
+        Unsubscriber = provider.Subscribe(this);
     }
 
     public virtual void Unsubscribe()
     {
-        _unsubscriber.Dispose();
+        Unsubscriber.Dispose();
     }
     public void OnCompleted() => throw new NotImplementedException();
 
