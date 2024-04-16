@@ -17,12 +17,12 @@ public class ElasticSearchBaseIndex(
     IIndexStateService indexStateService,
     IBieluSearchManager bieluSearchManager,
     IOptionsMonitor<LuceneDirectoryIndexOptions> indexOptions)
-    : BaseIndexProvider(loggerFactory, name, indexOptions), IBieluExamineIndex, IDisposable, IObserver<ValueSet>
+    : BaseIndexProvider(loggerFactory, name, indexOptions), IBieluExamineIndex, IDisposable, IObserver<TransformingObservable>
 {
     private bool? _exists;
     private ExamineIndexState IndexState => indexStateService.GetIndexState(name);
     private static readonly object _existsLocker = new object();
-
+    private IDisposable _unsubscriber = elasticSearchService.Subscribe(this);
     /// <summary>
     /// Occurs when [document writing].
     /// </summary>
@@ -118,20 +118,27 @@ public class ElasticSearchBaseIndex(
     public void Dispose()
 #pragma warning restore CA1816
     {
+        _unsubscriber.Dispose();
+    }
+    public virtual void Subscribe(IObservable<TransformingObservable> provider)
+    {
+        _unsubscriber = provider.Subscribe(this);
     }
 
+    public virtual void Unsubscribe()
+    {
+        _unsubscriber.Dispose();
+    }
     public void OnCompleted() => throw new NotImplementedException();
 
     public void OnError(Exception error) => throw new NotImplementedException();
 
-    public void OnNext(ValueSet value)
+    public void OnNext(TransformingObservable value)
     {
-        var indexingNodeDataArgs = new IndexingItemEventArgs(this, value);
+        var indexingNodeDataArgs = new IndexingItemEventArgs(this, value.ValueSet);
         OnTransformingIndexValues(indexingNodeDataArgs);
-        if (indexingNodeDataArgs.Cancel)
-        {
-            //todo: test
-            value = new ValueSet(BieluExamineConstants.CancelledValueSet);
-        }
+
+        //todo: test
+        value.Cancel = indexingNodeDataArgs.Cancel;
     }
 }
