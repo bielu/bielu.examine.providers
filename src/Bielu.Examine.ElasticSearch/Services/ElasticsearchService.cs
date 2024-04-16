@@ -30,7 +30,7 @@ public class ElasticsearchService(
     ILogger<ElasticsearchService> logger,
     ILoggerFactory loggerFactory) : ISearchService
 {
-    List<IObserver<TransformingObservable>> _observers = new();
+    readonly List<IObserver<TransformingObservable>> _observers = new();
 
     public bool IndexExists(string examineIndexName)
     {
@@ -72,8 +72,7 @@ public class ElasticsearchService(
         {
             Query = QueryRegex.PathRegex().Replace(query.ToString(), "$1\\-"), AnalyzeWildcard = true
         };
-        SearchRequestDescriptor<BieluExamineDocument> searchDescriptor =
-            new SearchRequestDescriptor<BieluExamineDocument>();
+        SearchRequestDescriptor<BieluExamineDocument> searchDescriptor = new SearchRequestDescriptor<BieluExamineDocument>();
         searchDescriptor.Index(state.IndexAlias)
             .Size(options?.Take ?? 1000)
             .From(options?.Skip ?? 0)
@@ -204,8 +203,7 @@ public class ElasticsearchService(
             return null;
         }
 
-        GetMappingResponse response =
-            client.Indices.GetMapping(mapping => mapping.Indices(indexesMappedToAlias[0]));
+        GetMappingResponse response = client.Indices.GetMapping(mapping => mapping.Indices(indexesMappedToAlias[0]));
         var properties = response.GetMappingFor(indexesMappedToAlias[0]).Properties;
         return properties.Select(x => x.Key.Name).ToList();
     }
@@ -221,8 +219,7 @@ public class ElasticsearchService(
             return null;
         }
 
-        GetMappingResponse response =
-            client.Indices.GetMapping(mapping => mapping.Indices(indexesMappedToAlias[0]));
+        GetMappingResponse response = client.Indices.GetMapping(mapping => mapping.Indices(indexesMappedToAlias[0]));
         var properties = response.GetMappingFor(indexesMappedToAlias[0]).Properties;
         return properties.Select(x => new ExamineProperty() { Key = x.Key.Name, Type = x.Value.Type.ToString() })
             .ToList();
@@ -232,8 +229,7 @@ public class ElasticsearchService(
         SearchRequestDescriptor<BieluExamineDocument> searchDescriptor)
     {
         var client = GetClient(examineIndexName);
-        SearchResponse<BieluExamineDocument>
-            searchResult = client.Search<BieluExamineDocument>(searchDescriptor);
+        SearchResponse<BieluExamineDocument> searchResult = client.Search<BieluExamineDocument>(searchDescriptor);
         return searchResult.ConvertToSearchResults();
     }
 
@@ -241,8 +237,7 @@ public class ElasticsearchService(
         SearchRequest<BieluExamineDocument> searchDescriptor)
     {
         var client = GetClient(examineIndexName);
-        SearchResponse<BieluExamineDocument>
-            searchResult = client.Search<BieluExamineDocument>(searchDescriptor);
+        SearchResponse<BieluExamineDocument> searchResult = client.Search<BieluExamineDocument>(searchDescriptor);
         return searchResult.ConvertToSearchResults();
     }
 
@@ -343,7 +338,10 @@ public class ElasticsearchService(
             {
                 var observable = new TransformingObservable() { ValueSet = d };
                 foreach (var observer in _observers)
+                {
                     observer.OnNext(observable);
+                }
+
                 if (observable.Cancel)
                 {
                     continue;
@@ -358,10 +356,12 @@ public class ElasticsearchService(
                     [ExamineFieldNames.CategoryFieldName.FormatFieldName()] = d.Category
                 };
 
-                foreach (var i in d.Values)
+                foreach (var valuesetValue in observable.ValueSet.Values)
                 {
-                    if (i.Value.Count > 0)
-                        ad[i.Key.FormatFieldName()] = i.Value.Count == 1 ? i.Value[0] : i.Value;
+                    if (valuesetValue.Value.Count > 0)
+                    {
+                        ad[valuesetValue.Key.FormatFieldName()] = valuesetValue.Value.Count == 1 ? valuesetValue.Value[0] : valuesetValue.Value;
+                    }
                 }
 
                 var docArgs = new Events.DocumentWritingEventArgs(d, ad);
@@ -371,19 +371,21 @@ public class ElasticsearchService(
             }
             catch (Exception e)
             {
-#pragma warning disable CA1848
                 logger.LogError(e, "Failed to index document {NodeID}", d.Id);
-#pragma warning restore CA1848
+
                 foreach (var observer in _observers)
+                {
                     observer.OnError(e);
+                }
+
             }
         }
 
         foreach (var observer in _observers)
         {
             observer.OnCompleted();
-
         }
+
         _observers.Clear();
         return descriptor;
     }
@@ -391,7 +393,9 @@ public class ElasticsearchService(
     public IDisposable Subscribe(IObserver<TransformingObservable> observer)
     {
         if (!_observers.Contains(observer))
+        {
             _observers.Add(observer);
+        }
 
         return new Unsubscriber<TransformingObservable>(_observers, observer);
     }
