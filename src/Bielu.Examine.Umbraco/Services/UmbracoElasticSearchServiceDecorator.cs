@@ -50,4 +50,5 @@ public class UmbracoElasticSearchServiceDecorator(ISearchService searchService, 
     public int GetDocumentCount(string? examineIndexName) => searchService.GetDocumentCount(examineIndexName);
     public bool HealthCheck(string? examineIndexNam) => searchService.HealthCheck(examineIndexNam);
     public IQuery CreateQuery(string name, string? indexAlias, string category, BooleanOperation defaultOperation) => searchService.CreateQuery(name, indexAlias, category, defaultOperation);
+    public IDisposable Subscribe(IObserver<TransformingObservable> observer) => searchService.Subscribe(observer);
 }
