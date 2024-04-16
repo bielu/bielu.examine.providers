@@ -24,6 +24,7 @@ namespace Bielu.Examine.Elasticsearch.Services;
 
 public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexStateService service, IPropertyMappingService propertyMappingService, IAnalyzerMappingService analyzerMappingService, ILogger<ElasticsearchService> logger, ILoggerFactory loggerFactory) : ISearchService
 {
+    List<IObserver<ValueSet>> _observers;
     public bool IndexExists(string examineIndexName)
     {
         var state = service.GetIndexState(examineIndexName);
@@ -330,5 +331,13 @@ public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexSta
         }
 
         return descriptor;
+    }
+
+    public IDisposable Subscribe(IObserver<ValueSet> observer)
+    {
+        if (! _observers.Contains(observer))
+            _observers.Add(observer);
+
+        return new Unsubscriber<ValueSet>(_observers, observer);
     }
 }

@@ -10,4 +10,5 @@ namespace Bielu.Examine.Core.Constants;
 public class BieluExamineConstants
 {
     public const string SectionPrefix = "bielu:Examine";
+    public const string CancelledValueSet = "cancelled-from-transformingvalue";
 }

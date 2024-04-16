@@ -1,4 +1,5 @@
-﻿using Bielu.Examine.Core.Extensions;
+﻿using Bielu.Examine.Core.Constants;
+using Bielu.Examine.Core.Extensions;
 using Bielu.Examine.Core.Models;
 using Bielu.Examine.Core.Services;
 using Examine;
@@ -16,7 +17,7 @@ public class ElasticSearchBaseIndex(
     IIndexStateService indexStateService,
     IBieluSearchManager bieluSearchManager,
     IOptionsMonitor<LuceneDirectoryIndexOptions> indexOptions)
-    : BaseIndexProvider(loggerFactory, name, indexOptions), IBieluExamineIndex, IDisposable
+    : BaseIndexProvider(loggerFactory, name, indexOptions), IBieluExamineIndex, IDisposable, IObserver<ValueSet>
 {
     private bool? _exists;
     private ExamineIndexState IndexState => indexStateService.GetIndexState(name);
@@ -47,17 +48,6 @@ public class ElasticSearchBaseIndex(
     protected override void PerformIndexItems(IEnumerable<ValueSet> values, Action<IndexOperationEventArgs> onComplete)
     {
         List<ValueSet> listValues = [];
-
-        foreach (var value in values)
-        {
-            var indexingNodeDataArgs = new IndexingItemEventArgs(this, value);
-            OnTransformingIndexValues(indexingNodeDataArgs);
-            if (!indexingNodeDataArgs.Cancel)
-            {
-                listValues.Add(indexingNodeDataArgs.ValueSet);
-            }
-
-        }
 
         long totalResults = elasticSearchService.IndexBatch(name, listValues);
 
@@ -128,5 +118,20 @@ public class ElasticSearchBaseIndex(
     public void Dispose()
 #pragma warning restore CA1816
     {
+    }
+
+    public void OnCompleted() => throw new NotImplementedException();
+
+    public void OnError(Exception error) => throw new NotImplementedException();
+
+    public void OnNext(ValueSet value)
+    {
+        var indexingNodeDataArgs = new IndexingItemEventArgs(this, value);
+        OnTransformingIndexValues(indexingNodeDataArgs);
+        if (indexingNodeDataArgs.Cancel)
+        {
+            //todo: test
+            value = new ValueSet(BieluExamineConstants.CancelledValueSet);
+        }
     }
 }
