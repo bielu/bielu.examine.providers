@@ -48,23 +48,18 @@ public class ElasticSearchBaseIndex(
     protected override void PerformIndexItems(IEnumerable<ValueSet> values, Action<IndexOperationEventArgs> onComplete)
     {
         List<ValueSet> listValues = [];
-
+        this.Subscribe(elasticSearchService);
         long totalResults = elasticSearchService.IndexBatch(name, listValues);
-
+        this.Unsubscribe();
         onComplete(new IndexOperationEventArgs(this, (int)totalResults));
     }
 
     protected override void PerformDeleteFromIndex(IEnumerable<string> itemIds,
         Action<IndexOperationEventArgs> onComplete)
     {
-        foreach (var id in itemIds)
-        {
-            var indexingNodeDataArgs = new IndexingItemEventArgs(this, new ValueSet(id));
-            OnTransformingIndexValues(indexingNodeDataArgs);
-        }
-
+        this.Subscribe(elasticSearchService);
         long totalResults = elasticSearchService.DeleteBatch(name, itemIds);
-
+        this.Unsubscribe();
         onComplete(new IndexOperationEventArgs(this, (int)totalResults));
     }
 
@@ -137,7 +132,6 @@ public class ElasticSearchBaseIndex(
     {
         var indexingNodeDataArgs = new IndexingItemEventArgs(this, value.ValueSet);
         OnTransformingIndexValues(indexingNodeDataArgs);
-
         //todo: test
         value.Cancel = indexingNodeDataArgs.Cancel;
     }

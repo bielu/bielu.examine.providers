@@ -297,9 +297,11 @@ public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexSta
         {
             try
             {
-                //var indexingNodeDataArgs = new IndexingItemEventArgs(this, d);
-                //    OnTransformingIndexValues(indexingNodeDataArgs);
-
+                foreach (var observer in _observers)
+                    observer.OnNext(new TransformingObservable()
+                    {
+                        ValueSet = d
+                    });
                 if (true)
                 {
                     //this is just a dictionary
@@ -327,9 +329,12 @@ public class ElasticsearchService(IElasticSearchClientFactory factory, IIndexSta
  #pragma warning disable CA1848
                 logger.LogError(e, "Failed to index document {NodeID}", d.Id);
  #pragma warning restore CA1848
+                foreach (var observer in _observers)
+                    observer.OnError(e);
             }
         }
-
+        foreach (var observer in _observers)
+            observer.OnCompleted();
         return descriptor;
     }
 
