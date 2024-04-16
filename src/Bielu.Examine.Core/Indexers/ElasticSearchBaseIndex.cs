@@ -1,4 +1,4 @@
-﻿using Bielu.Examine.Core.Constants;
+using Bielu.Examine.Core.Constants;
 using Bielu.Examine.Core.Extensions;
 using Bielu.Examine.Core.Models;
 using Bielu.Examine.Core.Services;
@@ -23,7 +23,7 @@ public class ElasticSearchBaseIndex(
     private ExamineIndexState IndexState => indexStateService.GetIndexState(name);
     private static readonly object _existsLocker = new object();
 
-    private IDisposable Unsubscriber => elasticSearchService.Subscribe(this);
+    private IDisposable Unsubscriber;
 
 
     /// <summary>
@@ -50,9 +50,8 @@ public class ElasticSearchBaseIndex(
 
     protected override void PerformIndexItems(IEnumerable<ValueSet> values, Action<IndexOperationEventArgs> onComplete)
     {
-        List<ValueSet> listValues = [];
         this.Subscribe(elasticSearchService);
-        long totalResults = elasticSearchService.IndexBatch(name, listValues);
+        long totalResults = elasticSearchService.IndexBatch(name, values);
         this.Unsubscribe();
         onComplete(new IndexOperationEventArgs(this, (int)totalResults));
     }
@@ -143,6 +142,7 @@ public class ElasticSearchBaseIndex(
         var indexingNodeDataArgs = new IndexingItemEventArgs(this, value.ValueSet);
         OnTransformingIndexValues(indexingNodeDataArgs);
         //todo: test
+        value.ValueSet = indexingNodeDataArgs.ValueSet;
         value.Cancel = indexingNodeDataArgs.Cancel;
     }
 }
