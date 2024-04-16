@@ -127,9 +127,16 @@ public class ElasticSearchBaseIndex(
     {
         Unsubscriber.Dispose();
     }
-    public void OnCompleted() => throw new NotImplementedException();
 
-    public void OnError(Exception error) => throw new NotImplementedException();
+    public void OnCompleted()
+    {
+
+    }
+
+    public void OnError(Exception error)
+    {
+        
+    }
 
     public void OnNext(TransformingObservable value)
     {

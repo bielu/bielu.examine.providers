@@ -380,7 +380,11 @@ public class ElasticsearchService(
         }
 
         foreach (var observer in _observers)
+        {
             observer.OnCompleted();
+
+        }
+        _observers.Clear();
         return descriptor;
     }
 
