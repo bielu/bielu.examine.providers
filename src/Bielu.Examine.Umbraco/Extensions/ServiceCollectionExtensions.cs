@@ -31,7 +31,7 @@ public static class UmbracoBuilderExtensions
             .InternalIndexName);
         builder.Services.AddBieluExamineIndex<BieluExamineUmbracoContentIndex>(global::Umbraco.Cms.Core.Constants.UmbracoIndexes
             .ExternalIndexName);
-        builder.Services.AddBieluExamineIndex<BieluExamineUmbracoContentIndex>(global::Umbraco.Cms.Core.Constants.UmbracoIndexes
+        builder.Services.AddBieluExamineIndex<BieluExamineUmbracoMemberIndex>(global::Umbraco.Cms.Core.Constants.UmbracoIndexes
             .MembersIndexName);
         builder.Services.AddBieluExamineIndex<BieluExamineUmbracoDeliveryApiContentIndex>(global::Umbraco.Cms.Core.Constants.UmbracoIndexes
             .DeliveryApiContentIndexName);
