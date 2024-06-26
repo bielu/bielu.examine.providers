@@ -1,8 +1,9 @@
-﻿using Bielu.Examine.Core.Extensions;
+using Bielu.Examine.Core.Extensions;
 using Bielu.Examine.Core.Indexers;
 using Bielu.Examine.Core.Services;
 using Examine;
 using Examine.Lucene;
+using Examine.Search;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Umbraco.Cms.Core;
@@ -21,6 +22,8 @@ namespace bielu.Examine.Umbraco.Indexers.Indexers
         public const string NodeKeyFieldName = SpecialFieldPrefix + "Key";
         public const string IconFieldName = SpecialFieldPrefix + "Icon";
         public const string PublishedFieldName = SpecialFieldPrefix + "Published";
+
+        private readonly ISet<string> _idOnlyFieldSet = new HashSet<string> { "id" };
 
         private readonly IProfilingLogger _logger;
         public bool EnableDefaultEventHandler { get; set; } = true;
@@ -76,8 +79,28 @@ namespace bielu.Examine.Umbraco.Indexers.Indexers
         protected override void PerformDeleteFromIndex(IEnumerable<string> itemIds,
             Action<IndexOperationEventArgs> onComplete)
         {
+            var idsAsList = itemIds.Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
+            var childIdsToDelete = new List<string>();
 
-            var response = searchService.DeleteBatch(name,itemIds.Where(x => !string.IsNullOrWhiteSpace(x)));
+            for (var i = 0; i < idsAsList.Count; i++)
+            {
+                var nodeId = idsAsList[i];
+
+                //find all descendants based on path
+                var descendantPath = $@"\-1*\,{nodeId}\,*";
+                var rawQuery = $"{UmbracoExamineFieldNames.IndexPathFieldName}:{descendantPath}";
+                IQuery? c = Searcher.CreateQuery();
+                IBooleanOperation? filtered = c.NativeQuery(rawQuery);
+                IOrdering? selectedFields = filtered.SelectFields(_idOnlyFieldSet);
+                ISearchResults? results = selectedFields.Execute();
+
+                childIdsToDelete.AddRange(results.Select(x => x.Id));
+                idsAsList.RemoveAll(x => childIdsToDelete.Contains(x));
+            }
+
+            idsAsList.AddRange(childIdsToDelete);
+
+            var response = searchService.DeleteBatch(name, idsAsList.Distinct());
         }
 
 
