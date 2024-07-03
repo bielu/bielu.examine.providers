@@ -169,20 +169,14 @@ public class ElasticsearchExamineIndexRebuilder :IIndexRebuilder
                     populator.Populate(index);
                 }
 
-                // Reset the cache for the ExamineManagementController
-                var cacheKey = "temp_indexing_op_" + indexName;
-                _runtimeCache.Insert(cacheKey, () => "tempValue", TimeSpan.FromMinutes(5));
-
                 if (index is IBieluExamineIndex elasticIndex)
                 {
+                    // Reset the ExamineManagementController cache for 1 second  
+                    var cacheKey = "temp_indexing_op_" + indexName;
+                    _runtimeCache.Insert(cacheKey, () => "tempValue", TimeSpan.FromSeconds(1));
+
                     elasticIndex.SwapIndex();
                 }
-
-                // Wait 1 second to get the right DocumentCount back from Elastic
-                Thread.Sleep(1000);
-
-                // Clear the cache for the ExamineManagementController
-                _runtimeCache.ClearByKey(cacheKey);
 
             }
         }
