@@ -19,7 +19,7 @@ public class ElasticSearchBaseIndex(
     IOptionsMonitor<LuceneDirectoryIndexOptions> indexOptions)
     : BaseIndexProvider(loggerFactory, name, indexOptions), IBieluExamineIndex, IDisposable, IObserver<TransformingObservable>
 {
-    private bool? _exists;
+    private bool _exists;
     private ExamineIndexState IndexState => indexStateService.GetIndexState(name);
     private static readonly object _existsLocker = new object();
 
@@ -47,13 +47,14 @@ public class ElasticSearchBaseIndex(
 
     private IBieluExamineSearcher CreateSearcher() => bieluSearchManager.GetSearcher(name);
 
+    void IIndex.IndexItems(IEnumerable<ValueSet> values) => PerformIndexItems(values, OnIndexOperationComplete);
 
     protected override void PerformIndexItems(IEnumerable<ValueSet> values, Action<IndexOperationEventArgs> onComplete)
     {
         this.Subscribe(elasticSearchService);
         long totalResults = elasticSearchService.IndexBatch(name, values);
         this.Unsubscribe();
-        onComplete(new IndexOperationEventArgs(this, (int)totalResults));
+        onComplete?.Invoke(new IndexOperationEventArgs(this, (int)totalResults));
     }
 
     protected override void PerformDeleteFromIndex(IEnumerable<string> itemIds,
@@ -62,32 +63,24 @@ public class ElasticSearchBaseIndex(
         this.Subscribe(elasticSearchService);
         long totalResults = elasticSearchService.DeleteBatch(name, itemIds);
         this.Unsubscribe();
-        onComplete(new IndexOperationEventArgs(this, (int)totalResults));
+        onComplete?.Invoke(new IndexOperationEventArgs(this, (int)totalResults));
     }
 
 
     public override void CreateIndex()
     {
+        _exists = false;
         elasticSearchService.EnsuredIndexExists(name, Analyzer, FieldDefinitions, true);
     }
 
     public override bool IndexExists()
     {
-        if (_exists.HasValue)
+        if (!_exists)
         {
-            return _exists.Value;
+            _exists = elasticSearchService.IndexExists(IndexName);
         }
 
-        if (elasticSearchService.IndexExists(IndexName))
-        {
-            _exists = true;
-        }
-        else
-        {
-            _exists = false;
-        }
-
-        return _exists.Value;
+        return _exists;
     }
 
     public override ISearcher Searcher => CreateSearcher();
@@ -106,6 +99,7 @@ public class ElasticSearchBaseIndex(
 
     public int DocumentCount =>
         (int)(IndexExists() ? elasticSearchService.GetDocumentCount(name) : 0);
+
 
     public int FieldCount => IndexExists() ? GetFields().Count() : 0;
 
@@ -134,7 +128,7 @@ public class ElasticSearchBaseIndex(
 
     public void OnError(Exception error)
     {
-        
+
     }
 
     public void OnNext(TransformingObservable value)

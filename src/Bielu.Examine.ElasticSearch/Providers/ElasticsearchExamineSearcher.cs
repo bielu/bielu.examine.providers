@@ -1,4 +1,4 @@
-﻿using Bielu.Examine.Core.Models;
+using Bielu.Examine.Core.Models;
 using Bielu.Examine.Core.Queries;
 using Bielu.Examine.Core.Services;
 using Bielu.Examine.Elasticsearch.Configuration;
@@ -28,7 +28,7 @@ public class ElasticsearchExamineSearcher(string name, string? indexAlias, ILogg
     private readonly List<SortField> _sortFields = new List<SortField>();
     private string?[] _allFields;
     private IEnumerable<ExamineProperty>? _fieldsMapping;
-    private bool? _exists;
+    private bool _exists;
 
 
     private static readonly string[]? _emptyFields = Array.Empty<string>();
@@ -36,12 +36,11 @@ public class ElasticsearchExamineSearcher(string name, string? indexAlias, ILogg
     {
         get
         {
-            if(_exists.HasValue)
+            if (!_exists)
             {
-                return (bool)_exists;
+                _exists = elasticsearchService.IndexExists(name);
             }
-            _exists = elasticsearchService.IndexExists(name);
-            return (bool)_exists;
+            return _exists;
         }
     }
 

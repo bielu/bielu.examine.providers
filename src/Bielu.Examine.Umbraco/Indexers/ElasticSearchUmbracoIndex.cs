@@ -33,7 +33,7 @@ namespace bielu.Examine.Umbraco.Indexers.Indexers
         public const string RawFieldPrefix = SpecialFieldPrefix + "Raw_";
 
 
-        public long GetDocumentCount() => 0;
+        public long GetDocumentCount() => searchService.GetDocumentCount(name);
         public IEnumerable<string> GetFieldNames() => GetFields();
         public bool SupportProtectedContent => CurrentContentValueSetValidator?.SupportProtectedContent ?? false;
         private readonly bool _configBased;
