@@ -1,4 +1,4 @@
-﻿using Bielu.Examine.Core.Configuration;
+using Bielu.Examine.Core.Configuration;
 using Bielu.Examine.Core.Extensions;
 using Bielu.Examine.Core.Services;
 using bielu.Examine.Umbraco.Indexers.Indexers;
@@ -31,11 +31,12 @@ public static class UmbracoBuilderExtensions
             .InternalIndexName);
         builder.Services.AddBieluExamineIndex<BieluExamineUmbracoContentIndex>(global::Umbraco.Cms.Core.Constants.UmbracoIndexes
             .ExternalIndexName);
-        builder.Services.AddBieluExamineIndex<BieluExamineUmbracoContentIndex>(global::Umbraco.Cms.Core.Constants.UmbracoIndexes
+        builder.Services.AddBieluExamineIndex<BieluExamineUmbracoMemberIndex>(global::Umbraco.Cms.Core.Constants.UmbracoIndexes
             .MembersIndexName);
         builder.Services.AddBieluExamineIndex<BieluExamineUmbracoDeliveryApiContentIndex>(global::Umbraco.Cms.Core.Constants.UmbracoIndexes
             .DeliveryApiContentIndexName);
         builder.Services.AddSingleton<IExamineManager, ExamineManager<IBieluExamineIndex>>();
+
         return builder;
     }
     public static IServiceCollection AddBieluExamineIndex<TIndex>(this IServiceCollection serviceCollection, string name) where TIndex : class, IBieluExamineIndex

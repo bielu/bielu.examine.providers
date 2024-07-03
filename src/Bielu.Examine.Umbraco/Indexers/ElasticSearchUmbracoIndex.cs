@@ -1,4 +1,3 @@
-using Bielu.Examine.Core.Extensions;
 using Bielu.Examine.Core.Indexers;
 using Bielu.Examine.Core.Services;
 using Examine;
@@ -14,7 +13,7 @@ using Umbraco.Extensions;
 
 namespace bielu.Examine.Umbraco.Indexers.Indexers
 {
-    public class BieluExamineUmbracoIndex(string? name, ILoggerFactory loggerFactory, IRuntime runtime, ILogger<IBieluExamineIndex> logger,ISearchService searchService, IIndexStateService stateService, IBieluSearchManager manager, IOptionsMonitor<LuceneDirectoryIndexOptions> indexOptions) : ElasticSearchBaseIndex(name, logger, loggerFactory, searchService,stateService,manager,indexOptions), IBieluExamineIndex, IUmbracoIndex, IIndexDiagnostics
+    public class BieluExamineUmbracoIndex(string? name, ILoggerFactory loggerFactory, IRuntime runtime, ILogger<IBieluExamineIndex> logger, ISearchService searchService, IIndexStateService stateService, IBieluSearchManager manager, IOptionsMonitor<LuceneDirectoryIndexOptions> indexOptions) : ElasticSearchBaseIndex(name, logger, loggerFactory, searchService, stateService, manager, indexOptions), IBieluExamineIndex, IUmbracoIndex, IIndexDiagnostics
     {
 
         public const string SpecialFieldPrefix = "__";
@@ -24,7 +23,7 @@ namespace bielu.Examine.Umbraco.Indexers.Indexers
         public const string PublishedFieldName = SpecialFieldPrefix + "Published";
 
         private readonly ISet<string> _idOnlyFieldSet = new HashSet<string> { "id" };
-
+        private readonly LuceneDirectoryIndexOptions _namedOptions = indexOptions.Get(name);
         private readonly IProfilingLogger _logger;
         public bool EnableDefaultEventHandler { get; set; } = true;
         public override string Name => name;
@@ -34,7 +33,7 @@ namespace bielu.Examine.Umbraco.Indexers.Indexers
         public const string RawFieldPrefix = SpecialFieldPrefix + "Raw_";
 
 
-        public long GetDocumentCount() => 0;
+        public long GetDocumentCount() => searchService.GetDocumentCount(name);
         public IEnumerable<string> GetFieldNames() => GetFields();
         public bool SupportProtectedContent => CurrentContentValueSetValidator?.SupportProtectedContent ?? false;
         private readonly bool _configBased;
@@ -46,7 +45,7 @@ namespace bielu.Examine.Umbraco.Indexers.Indexers
         /// </summary>
 
         public bool PublishedValuesOnly => CurrentContentValueSetValidator?.PublishedValuesOnly ?? false;
-        private IContentValueSetValidator? CurrentContentValueSetValidator => indexOptions.CurrentValue.Validator as IContentValueSetValidator;
+        private IContentValueSetValidator? CurrentContentValueSetValidator => _namedOptions.Validator as IContentValueSetValidator;
         /// <summary>
         /// override to check if we can actually initialize.
         /// </summary>
@@ -70,9 +69,9 @@ namespace bielu.Examine.Umbraco.Indexers.Indexers
         /// <param name="e"></param>
         protected override void OnIndexingError(IndexingErrorEventArgs e)
         {
- #pragma warning disable CA1848
+#pragma warning disable CA1848
             logger.LogError(e.Exception, "Error indexing item {NodeId}", e.ItemId);
- #pragma warning restore CA1848
+#pragma warning restore CA1848
             base.OnIndexingError(e);
         }
 

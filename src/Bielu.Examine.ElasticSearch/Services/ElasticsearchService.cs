@@ -9,7 +9,6 @@ using Elastic.Clients.Elasticsearch;
 using Elastic.Clients.Elasticsearch.IndexManagement;
 using Elastic.Clients.Elasticsearch.Mapping;
 using Elastic.Clients.Elasticsearch.QueryDsl;
-using Elastic.Transport.Extensions;
 using Examine;
 using Examine.Lucene.Search;
 using Examine.Search;
@@ -309,9 +308,9 @@ public class ElasticsearchService(
         return (int)client.Count(index => index.Index(state.CurrentIndexName)).Count;
     }
 
-    public bool HealthCheck(string? examineIndexNam)
+    public bool HealthCheck(string? examineIndexName)
     {
-        var client = GetClient(examineIndexNam);
+        var client = GetClient(examineIndexName);
         return client.Cluster.Health().Status == HealthStatus.Green ||
                client.Cluster.Health().Status == HealthStatus.Yellow;
     }
@@ -324,7 +323,7 @@ public class ElasticsearchService(
 
     private static string CreateIndexName(string indexAlias)
     {
-        return $"{indexAlias}_{DateTime.UtcNow:yyyyMMddHHmmss}";
+        return $"{indexAlias}_{DateTime.Now:yyyyMMddHHmmss}";
     }
 
     private BulkRequestDescriptor ToElasticSearchDocs(IEnumerable<ValueSet> docs, string? indexTarget)
