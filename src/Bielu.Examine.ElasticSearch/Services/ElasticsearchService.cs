@@ -349,7 +349,7 @@ public class ElasticsearchService(
                 //this is just a dictionary
                 var ad = new BieluExamineDocument
                 {
-                    //["Id"] = d.Id,
+                    ["id"] = d.Id,
                     [ExamineFieldNames.ItemIdFieldName.FormatFieldName()] = d.Id,
                     [ExamineFieldNames.ItemTypeFieldName.FormatFieldName()] = d.ItemType,
                     [ExamineFieldNames.CategoryFieldName.FormatFieldName()] = d.Category
