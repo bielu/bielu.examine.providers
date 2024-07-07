@@ -33,7 +33,7 @@ public class ElasticsearchService(
 
     public bool IndexExists(string examineIndexName)
     {
-        var state = service.GetIndexState(examineIndexName);
+        var state = service.GetIndexState(examineIndexName, this);
         var client = GetClient(examineIndexName);
         var aliasExists = client.Indices.Exists(state.IndexAlias).Exists;
         if (aliasExists)
@@ -54,7 +54,7 @@ public class ElasticsearchService(
 
     public IEnumerable<string>? GetCurrentIndexNames(string examineIndexName)
     {
-        var state = service.GetIndexState(examineIndexName);
+        var state = service.GetIndexState(examineIndexName, this);
         return GetIndexesAssignedToAlias(GetClient(examineIndexName), state.IndexAlias);
     }
 
@@ -66,7 +66,7 @@ public class ElasticsearchService(
 
     public BieluExamineSearchResults Search(string examineIndexName, QueryOptions? options, Query query)
     {
-        var state = service.GetIndexState(examineIndexName);
+        var state = service.GetIndexState(examineIndexName, this);
         var queryContainer = new QueryStringQuery()
         {
             Query = QueryRegex.PathRegex().Replace(query.ToString(), "$1\\-"), AnalyzeWildcard = true
@@ -100,14 +100,14 @@ public class ElasticsearchService(
         {
             if (overrideExisting)
             {
-                var state = service.GetIndexState(examineIndexName);
+                var state = service.GetIndexState(examineIndexName, this);
                 state.Reindexing = true;
                 CreateIndex(examineIndexName, analyzer, fieldsMapping);
             }
         }
         else
         {
-            var state = service.GetIndexState(examineIndexName);
+            var state = service.GetIndexState(examineIndexName, this);
             state.Reindexing = true;
             CreateIndex(examineIndexName, analyzer, fieldsMapping);
         }
@@ -137,7 +137,7 @@ public class ElasticsearchService(
         Func<PropertiesDescriptor<BieluExamineDocument>, PropertiesDescriptor<BieluExamineDocument>> fieldsMapping)
     {
         var client = GetClient(examineIndexName);
-        var state = service.GetIndexState(examineIndexName);
+        var state = service.GetIndexState(examineIndexName, this);
         if (state.CreatingNewIndex)
         {
             return;
@@ -194,7 +194,7 @@ public class ElasticsearchService(
     public IEnumerable<string>? GetPropertiesNames(string examineIndexName)
     {
         var client = GetClient(examineIndexName);
-        var state = service.GetIndexState(examineIndexName);
+        var state = service.GetIndexState(examineIndexName, this);
 
         var indexesMappedToAlias = GetIndexesAssignedToAlias(client, state.IndexAlias).ToList();
         if (indexesMappedToAlias.Count <= 0)
@@ -210,7 +210,7 @@ public class ElasticsearchService(
     public IEnumerable<ExamineProperty>? GetProperties(string examineIndexName)
     {
         var client = GetClient(examineIndexName);
-        var state = service.GetIndexState(examineIndexName);
+        var state = service.GetIndexState(examineIndexName, this);
 
         var indexesMappedToAlias = GetIndexesAssignedToAlias(client, state.IndexAlias).ToList();
         if (indexesMappedToAlias.Count <= 0)
@@ -243,7 +243,7 @@ public class ElasticsearchService(
     public void SwapTempIndex(string? examineIndexName)
     {
         var client = GetClient(examineIndexName);
-        var state = service.GetIndexState(examineIndexName);
+        var state = service.GetIndexState(examineIndexName, this);
         var oldIndexes = GetIndexesAssignedToAlias(client, state.IndexAlias);
         var bulkAliasResponse = client.Indices.UpdateAliases(x =>
             x.Actions(a => a.Add(add => add.Index(state.CurrentTemporaryIndexName).Alias(state.IndexAlias))));
@@ -268,7 +268,7 @@ public class ElasticsearchService(
     {
         var totalResults = 0L;
         var client = GetClient(examineIndexName);
-        var state = service.GetIndexState(examineIndexName);
+        var state = service.GetIndexState(examineIndexName, this);
         if (!IndexExists(examineIndexName))
         {
             return 0;
@@ -289,7 +289,7 @@ public class ElasticsearchService(
     public long DeleteBatch(string? examineIndexName, IEnumerable<string> itemIds)
     {
         var client = GetClient(examineIndexName);
-        var state = service.GetIndexState(examineIndexName);
+        var state = service.GetIndexState(examineIndexName, this);
         var descriptor = new BulkRequestDescriptor();
         foreach (var id in itemIds)
         {
@@ -303,7 +303,7 @@ public class ElasticsearchService(
     public int GetDocumentCount(string? examineIndexName)
     {
         var client = GetClient(examineIndexName);
-        var state = service.GetIndexState(examineIndexName);
+        var state = service.GetIndexState(examineIndexName, this);
 
         return (int)client.Count(index => index.Index(state.CurrentIndexName)).Count;
     }

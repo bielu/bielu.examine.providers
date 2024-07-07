@@ -9,7 +9,8 @@ namespace Bielu.Examine.Elasticsearch.Services;
 public class IndexStateService(IOptionsMonitor<BieluExamineElasticOptions> examineElasticOptions) : IIndexStateService
 {
     private Dictionary<string, ExamineIndexState> _indexStates = [];
-    public ExamineIndexState GetIndexState(string indexName)
+
+    public ExamineIndexState GetIndexState(string indexName, ISearchService searchService)
     {
         if (_indexStates.TryGetValue(indexName, out var state))
         {
@@ -30,6 +31,7 @@ public class IndexStateService(IOptionsMonitor<BieluExamineElasticOptions> exami
         state.IndexAlias = $"{prefix}{indexName.ToLowerInvariant()}";
         state.TempIndexAlias = $"{prefix}temp_{indexName.ToLowerInvariant()}";
         _indexStates[indexName] = state;
+        state.Exist = searchService?.IndexExists(indexName) ?? false;
         return state;
     }
 }

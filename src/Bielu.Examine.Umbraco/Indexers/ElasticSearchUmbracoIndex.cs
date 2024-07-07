@@ -152,7 +152,7 @@ namespace bielu.Examine.Umbraco.Indexers.Indexers
 
         private void AddGeneralMetadata(Dictionary<string, object?> metadata)
         {
-            var state = stateService.GetIndexState(name);
+            var state = stateService.GetIndexState(name, searchService);
             metadata[nameof(DocumentCount)] = DocumentCount;
             metadata[nameof(Name)] = Name;
             metadata[nameof(IndexAlias)] = IndexAlias;

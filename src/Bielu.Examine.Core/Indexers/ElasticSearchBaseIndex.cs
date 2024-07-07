@@ -19,8 +19,8 @@ public class ElasticSearchBaseIndex(
     IOptionsMonitor<LuceneDirectoryIndexOptions> indexOptions)
     : BaseIndexProvider(loggerFactory, name, indexOptions), IBieluExamineIndex, IDisposable, IObserver<TransformingObservable>
 {
-    private bool _exists;
-    private ExamineIndexState IndexState => indexStateService.GetIndexState(name);
+    private ExamineIndexState IndexState => indexStateService.GetIndexState(name, elasticSearchService);
+
     private static readonly object _existsLocker = new object();
 
     private IDisposable Unsubscriber;
@@ -69,20 +69,11 @@ public class ElasticSearchBaseIndex(
 
     public override void CreateIndex()
     {
-        _exists = false;
         elasticSearchService.EnsuredIndexExists(name, Analyzer, FieldDefinitions, true);
     }
 
-    public override bool IndexExists()
-    {
-        if (!_exists)
-        {
-            _exists = elasticSearchService.IndexExists(IndexName);
-        }
-
-        return _exists;
-    }
-
+    public override bool IndexExists() => IndexState.Exist;
+    
     public override ISearcher Searcher => CreateSearcher();
 
     public void SwapIndex()
