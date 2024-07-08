@@ -22,7 +22,6 @@ namespace bielu.Examine.Umbraco.Indexers.Indexers
         public const string IconFieldName = SpecialFieldPrefix + "Icon";
         public const string PublishedFieldName = SpecialFieldPrefix + "Published";
 
-        private readonly ISet<string> _idOnlyFieldSet = new HashSet<string> { "id" };
         private readonly LuceneDirectoryIndexOptions _namedOptions = indexOptions.Get(name);
         private readonly IProfilingLogger _logger;
         public bool EnableDefaultEventHandler { get; set; } = true;
@@ -35,7 +34,7 @@ namespace bielu.Examine.Umbraco.Indexers.Indexers
 
         public long GetDocumentCount() => searchService.GetDocumentCount(name);
         public IEnumerable<string> GetFieldNames() => GetFields();
-        public bool SupportProtectedContent => CurrentContentValueSetValidator?.SupportProtectedContent ?? false;
+        //public bool SupportProtectedContent => CurrentContentValueSetValidator?.SupportProtectedContent ?? false;
         private readonly bool _configBased;
 
         protected IProfilingLogger ProfilingLogger { get; }
@@ -44,7 +43,12 @@ namespace bielu.Examine.Umbraco.Indexers.Indexers
         /// When set to true Umbraco will keep the index in sync with Umbraco data automatically
         /// </summary>
 
-        public bool PublishedValuesOnly => CurrentContentValueSetValidator?.PublishedValuesOnly ?? false;
+        //public bool PublishedValuesOnly => CurrentContentValueSetValidator?.PublishedValuesOnly ?? false;
+
+        public bool PublishedValuesOnly { get; protected set; } = false;
+
+        public bool SupportProtectedContent { get; protected set; } = true;
+
         private IContentValueSetValidator? CurrentContentValueSetValidator => _namedOptions.Validator as IContentValueSetValidator;
         /// <summary>
         /// override to check if we can actually initialize.
@@ -74,34 +78,6 @@ namespace bielu.Examine.Umbraco.Indexers.Indexers
 #pragma warning restore CA1848
             base.OnIndexingError(e);
         }
-
-        protected override void PerformDeleteFromIndex(IEnumerable<string> itemIds,
-            Action<IndexOperationEventArgs> onComplete)
-        {
-            var idsAsList = itemIds.Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
-            var childIdsToDelete = new List<string>();
-
-            for (var i = 0; i < idsAsList.Count; i++)
-            {
-                var nodeId = idsAsList[i];
-
-                //find all descendants based on path
-                var descendantPath = $@"\-1*\,{nodeId}\,*";
-                var rawQuery = $"{UmbracoExamineFieldNames.IndexPathFieldName}:{descendantPath}";
-                IQuery? c = Searcher.CreateQuery();
-                IBooleanOperation? filtered = c.NativeQuery(rawQuery);
-                IOrdering? selectedFields = filtered.SelectFields(_idOnlyFieldSet);
-                ISearchResults? results = selectedFields.Execute();
-
-                childIdsToDelete.AddRange(results.Select(x => x.Id));
-                idsAsList.RemoveAll(x => childIdsToDelete.Contains(x));
-            }
-
-            idsAsList.AddRange(childIdsToDelete);
-
-            var response = searchService.DeleteBatch(name, idsAsList.Distinct());
-        }
-
 
         protected override void OnTransformingIndexValues(IndexingItemEventArgs e)
         {
@@ -192,5 +168,6 @@ namespace bielu.Examine.Umbraco.Indexers.Indexers
         {
             metadata[nameof(FieldDefinitionCollection)] = String.Join(", ", (Searcher as IBieluExamineSearcher).AllFields);
         }
+
     }
 }

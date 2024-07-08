@@ -130,4 +130,9 @@ public class ElasticSearchBaseIndex(
         value.ValueSet = indexingNodeDataArgs.ValueSet;
         value.Cancel = indexingNodeDataArgs.Cancel;
     }
+
+    public long DeleteBatch(IEnumerable<string> itemIds)
+    {
+        return elasticSearchService.DeleteBatch(name, itemIds);
+    }
 }
