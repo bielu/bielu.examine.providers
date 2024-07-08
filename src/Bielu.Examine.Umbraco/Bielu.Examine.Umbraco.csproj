@@ -15,8 +15,6 @@
       </PackageReference>
       <PackageReference Include="Umbraco.Cms.Examine.Lucene">
       </PackageReference>
-      <PackageReference Include="Umbraco.Cms.Infrastructure">
-      </PackageReference>
     </ItemGroup>
 
     <ItemGroup>
