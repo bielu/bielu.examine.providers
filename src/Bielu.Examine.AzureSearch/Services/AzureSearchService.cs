@@ -7,6 +7,7 @@ using Bielu.Examine.Core.Models;
 using Bielu.Examine.Core.Queries;
 using Bielu.Examine.Core.Regex;
 using Bielu.Examine.Core.Services;
+using Bielu.Examine.Elasticsearch.Events;
 using Bielu.Examine.Elasticsearch.Extensions;
 using Bielu.Examine.Elasticsearch.Model;
 using Bielu.Examine.Elasticsearch.Services;
@@ -14,7 +15,6 @@ using Examine;
 using Examine.Lucene.Search;
 using Examine.Search;
 using Lucene.Net.Analysis.Standard;
-using Lucene.Net.Documents;
 using Lucene.Net.Util;
 using Microsoft.Extensions.Logging;
 using Query = Lucene.Net.Search.Query;
@@ -23,15 +23,17 @@ namespace Bielu.Examine.AzureSearch.Services;
 
 public class AzureSearchService(IAzureSearchClientFactory factory, IIndexStateService service, IPropertyMappingService propertyMappingService, ILogger<AzureSearchService> logger, ILoggerFactory loggerFactory) : ISearchService
 {
+    readonly List<IObserver<TransformingObservable>> _observers = new();
     public bool IndexExists(string examineIndexName)
     {
-        var state = service.GetIndexState(examineIndexName);
         var client = GetIndexingClient(examineIndexName);
-        var aliasExists = client.GetAlias(state.IndexAlias).Value;
-        if (aliasExists != null && aliasExists.Indexes.Count > 0)
+        var state = service.GetIndexState(examineIndexName,this);
+        var aliasExist = client.GetAliases();
+
+        if (AliasExist(state.IndexAlias))
         {
             state.Exist = true;
-            state.CurrentIndexName ??= aliasExists.Indexes[0];
+            state.CurrentIndexName ??= state.IndexAlias;
             return state.Exist;
         }
         state.Exist = false;
@@ -39,7 +41,7 @@ public class AzureSearchService(IAzureSearchClientFactory factory, IIndexStateSe
     }
     public IEnumerable<string>? GetCurrentIndexNames(string examineIndexName)
     {
-        var state = service.GetIndexState(examineIndexName);
+        var state = service.GetIndexState(examineIndexName,this);
         return GetIndexesAssignedToAlias(GetIndexingClient(examineIndexName), state.IndexAlias);
     }
     public void CreateIndex(string examineIndexName, string analyzer,  ReadOnlyFieldDefinitionCollection properties)
@@ -49,7 +51,7 @@ public class AzureSearchService(IAzureSearchClientFactory factory, IIndexStateSe
     }
     public BieluExamineSearchResults Search(string examineIndexName, QueryOptions? options, Query query)
     {
-        var state = service.GetIndexState(examineIndexName);
+        var state = service.GetIndexState(examineIndexName, this);
         var searchOptions=new SearchOptions()
         {
             Filter = QueryRegex.PathRegex().Replace(query.ToString(), "$1\\-"),
@@ -81,22 +83,26 @@ public class AzureSearchService(IAzureSearchClientFactory factory, IIndexStateSe
         {
             if (overrideExisting)
             {
-                var state = service.GetIndexState(examineIndexName);
+                var state = service.GetIndexState(examineIndexName, this);
                 state.Reindexing = true;
                 CreateIndex(examineIndexName, fieldsMapping);
             }
         }
         else
         {
-            var state = service.GetIndexState(examineIndexName);
+            var state = service.GetIndexState(examineIndexName, this);
             state.Reindexing = true;
             CreateIndex(examineIndexName, fieldsMapping);
         }
     }
-    private static List<string>? GetIndexesAssignedToAlias(SearchIndexClient client, string? aliasName)
+    private List<string>? GetIndexesAssignedToAlias(SearchIndexClient client, string? aliasName)
     {
         ArgumentNullException.ThrowIfNull(aliasName);
 
+        if (!IndexExists(aliasName))
+        {
+            return new List<string>();
+        }
         var aliasExists = client.GetAlias(aliasName);
         if (aliasExists.HasValue && aliasExists.Value.Indexes.Count > 0)
         {
@@ -104,12 +110,22 @@ public class AzureSearchService(IAzureSearchClientFactory factory, IIndexStateSe
         }
         return new List<string>();
     }
-    private SearchClient GetSearchClient(string examineIndexName) => factory.GetOrCreateSearchClient(examineIndexName);
-    private SearchIndexClient GetIndexingClient(string examineIndexName) => factory.GetOrCreateIndexClient(examineIndexName);
+    private SearchClient GetSearchClient(string examineIndexName)
+    {
+        var state = service.GetIndexState(examineIndexName);
+        return factory.GetOrCreateSearchClient(state.IndexName);
+    }
+
+    private SearchIndexClient GetIndexingClient(string examineIndexName)
+    {
+        var state = service.GetIndexState(examineIndexName);
+        return factory.GetOrCreateIndexClient(state.IndexName);
+    }
+
     public void CreateIndex(string examineIndexName, IEnumerable<SearchFieldTemplate> fieldMapping)
     {
         var client = GetIndexingClient(examineIndexName);
-        var state = service.GetIndexState(examineIndexName);
+        var state = service.GetIndexState(examineIndexName, this);
         if (state.CreatingNewIndex)
         {
             return;
@@ -120,22 +136,47 @@ public class AzureSearchService(IAzureSearchClientFactory factory, IIndexStateSe
         if (state.Reindexing)
         {
             state.CurrentTemporaryIndexName = indexName;
+        }
+        else
+        {
+            state.CurrentIndexName = indexName;
+        }
+        var aliasExists = AliasExist(state.IndexAlias);
+        var aliasIndexes = GetIndexesAssignedToAlias(client, state.IndexAlias);
+        var indexesMappedToAlias = aliasExists
+            ? GetIndexesAssignedToAlias(client, state.IndexAlias).ToList()
+            : new List<String>();
+        if (state.Reindexing)
+        {
+            client.CreateIndex( new SearchIndex(indexName,fieldMapping.Select(x=>(SearchField)x).ToList()));
             return;
         }
-        state.CurrentIndexName = indexName;
-        var aliasState = client.GetAlias(state.IndexAlias);
-        var aliasExists = aliasState.Value != null && aliasState.Value.Indexes.Count > 0;
-
-        var indexesMappedToAlias = aliasExists
-            ? GetIndexesAssignedToAlias(client, indexName).ToList()
-            : new List<String>();
-        if (!aliasExists || aliasState.Value?.Indexes != null && (aliasState.Value?.Indexes).All(x => x != state.CurrentIndexName))
+        if (!aliasExists  || !aliasIndexes?.Contains(state.IndexName) == true)
         {
             var createAlias =  client.CreateOrUpdateAlias(state.IndexAlias, new SearchAlias(state.IndexAlias, state.CurrentIndexName));
         }
 
-
     }
+
+    private bool AliasExist(string alias)
+    {
+        var client = GetIndexingClient(alias);
+        var aliasExist = client.GetAliases();
+        if(aliasExist.All(x=>x.Name !=alias))
+        {
+            return false;
+        }
+        var aliasExists = client.GetAlias(alias).Value;
+        var state = service.GetIndexState(alias, this);
+        if (aliasExists != null && aliasExists.Indexes.Count > 0)
+        {
+            state.CurrentIndexName ??= aliasExists.Indexes[0];
+            return state.Exist;
+        }
+
+        return false;
+    }
+
     public IEnumerable<string>? GetPropertiesNames(string examineIndexName)
     {
         var client = GetIndexingClient(examineIndexName);
@@ -151,7 +192,7 @@ public class AzureSearchService(IAzureSearchClientFactory factory, IIndexStateSe
     public IEnumerable<ExamineProperty>? GetProperties(string examineIndexName)
     {
         var client = GetIndexingClient(examineIndexName);
-        var state = service.GetIndexState(examineIndexName);
+        var state = service.GetIndexState(examineIndexName, this);
 
         var indexesMappedToAlias = GetIndexesAssignedToAlias(client, state.IndexAlias).ToList();
         if (indexesMappedToAlias.Count <= 0)
@@ -169,7 +210,7 @@ public class AzureSearchService(IAzureSearchClientFactory factory, IIndexStateSe
     public void SwapTempIndex(string? examineIndexName)
     {
         var client = GetIndexingClient(examineIndexName);
-        var state = service.GetIndexState(examineIndexName);
+        var state = service.GetIndexState(examineIndexName, this);
         var oldIndexes = GetIndexesAssignedToAlias(client, state.IndexAlias);
         var bulkAliasResponse = client.CreateOrUpdateAlias(state.IndexAlias, new SearchAlias(state.IndexAlias, state.CurrentTemporaryIndexName));
         state.CurrentIndexName = state.CurrentTemporaryIndexName;
@@ -185,7 +226,7 @@ public class AzureSearchService(IAzureSearchClientFactory factory, IIndexStateSe
     {
         var totalResults = 0L;
         var client = GetSearchClient(examineIndexName);
-        var state = service.GetIndexState(examineIndexName);
+        var state = service.GetIndexState(examineIndexName, this);
         if (!IndexExists(examineIndexName))
         {
             return 0;
@@ -202,22 +243,30 @@ public class AzureSearchService(IAzureSearchClientFactory factory, IIndexStateSe
     public long DeleteBatch(string? examineIndexName, IEnumerable<string> itemIds)
     {
         var client = GetSearchClient(examineIndexName);
-        var state = service.GetIndexState(examineIndexName);
+        var state = service.GetIndexState(examineIndexName, this);
         var delete= client.DeleteDocuments("Id", itemIds);
 
         return delete.Value.Results.Count;
     }
     public int GetDocumentCount(string? examineIndexName)
     {
-        var state = service.GetIndexState(examineIndexName);
+        var state = service.GetIndexState(examineIndexName, this);
         var client = GetSearchClient(state.IndexAlias);
-
+        if (!IndexExists(state.IndexAlias))
+        {
+            return 0;
+        }
         return (int)client.GetDocumentCount();
     }
-    public bool HealthCheck(string? examineIndexNam)
+    public bool HealthCheck(string? examineIndexName)
     {
-        var client = GetIndexingClient(examineIndexNam);
-        var index=client.GetIndex(examineIndexNam);
+        var client = GetIndexingClient(examineIndexName);
+        var state = service.GetIndexState(examineIndexName, this);
+        if(!IndexExists(examineIndexName))
+        {
+            return false;
+        }
+        var index=client.GetIndex(state.IndexAlias);
         return index.HasValue && index.Value.Fields.Any();
     }
     public IQuery CreateQuery(string name, string? indexAlias, string category, BooleanOperation defaultOperation) => new BieluExamineQuery(name, indexAlias, new ElasticSearchQueryParser(LuceneVersion.LUCENE_CURRENT, GetPropertiesNames(name).ToArray(), new StandardAnalyzer(LuceneVersion.LUCENE_48)), this, loggerFactory, loggerFactory.CreateLogger<BieluExamineQuery>(), category, new LuceneSearchOptions(), defaultOperation);
@@ -236,7 +285,16 @@ public class AzureSearchService(IAzureSearchClientFactory factory, IIndexStateSe
             {
                 //var indexingNodeDataArgs = new IndexingItemEventArgs(this, d);
                 //    OnTransformingIndexValues(indexingNodeDataArgs);
+                var observable = new TransformingObservable() { ValueSet = d };
+                foreach (var observer in _observers)
+                {
+                    observer.OnNext(observable);
+                }
 
+                if (observable.Cancel)
+                {
+                    continue;
+                }
                 if (true)
                 {
                     //this is just a dictionary
@@ -254,7 +312,7 @@ public class AzureSearchService(IAzureSearchClientFactory factory, IIndexStateSe
                             ad[i.Key.FormatFieldName()] = i.Value.Count == 1 ? i.Value[0] : i.Value;
                     }
 
-                    var docArgs = new Elasticsearch.Events.DocumentWritingEventArgs(d, ad);
+                    var docArgs = new DocumentWritingEventArgs(d, ad);
                     // OnDocumentWriting(docArgs);
                     descriptor.Add(ad);
                 }
@@ -263,10 +321,30 @@ public class AzureSearchService(IAzureSearchClientFactory factory, IIndexStateSe
             {
  #pragma warning disable CA1848
                 logger.LogError(e, "Failed to index document {NodeID}", d.Id);
+                foreach (var observer in _observers)
+                {
+                    observer.OnError(e);
+                }
  #pragma warning restore CA1848
             }
+            foreach (var observer in _observers)
+            {
+                observer.OnCompleted();
+            }
+
+            _observers.Clear();
         }
 
         return descriptor;
     }
+    public IDisposable Subscribe(IObserver<TransformingObservable> observer)
+    {
+        if (!_observers.Contains(observer))
+        {
+            _observers.Add(observer);
+        }
+
+        return new Unsubscriber<TransformingObservable>(_observers, observer);
+    }
+
 }

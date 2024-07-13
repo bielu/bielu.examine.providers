@@ -4,6 +4,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>False</IsPackable>
+    <UserSecretsId>31b7b68b-1f60-4007-a9c6-df3525fda7a6</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Bielu.Examine.AzureSearch\Bielu.Examine.AzureSearch.csproj" />
     <ProjectReference Include="..\Bielu.Examine.Elasticsearch\Bielu.Examine.Elasticsearch.csproj" />
     <ProjectReference Include="..\Bielu.Examine.Umbraco.Forms\Bielu.Examine.Umbraco.Forms.csproj" />
     <ProjectReference Include="..\Bielu.Examine.Umbraco\Bielu.Examine.Umbraco.csproj" />

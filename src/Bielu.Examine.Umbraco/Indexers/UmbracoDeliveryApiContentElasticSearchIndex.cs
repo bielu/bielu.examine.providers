@@ -41,7 +41,9 @@ public class BieluExamineUmbracoDeliveryApiContentIndex : BieluExamineUmbracoInd
             var (contentId, culture) = ParseItemId(itemId);
             if (contentId is null)
             {
-                _logger.LogWarning("Could not parse item ID; expected integer or composite ID, got: {itemId}", itemId);
+#pragma warning disable CA1848
+                _logger.LogWarning("Could not parse item ID; expected integer or composite ID, got: {ItemId}", itemId);
+#pragma warning restore CA1848
                 continue;
             }
 
@@ -66,7 +68,9 @@ public class BieluExamineUmbracoDeliveryApiContentIndex : BieluExamineUmbracoInd
                 .SelectField(UmbracoExamineFieldNames.ItemIdFieldName)
                 .Execute();
 
+#pragma warning disable CA1848
             _logger.LogDebug("DeleteFromIndex with query: {Query} (found {TotalItems} results)", rawQuery, results.TotalItemCount);
+#pragma warning restore CA1848
 
             // grab the index IDs from the index (the composite IDs)
             var indexIds = results.Select(x => x.Id).ToList();

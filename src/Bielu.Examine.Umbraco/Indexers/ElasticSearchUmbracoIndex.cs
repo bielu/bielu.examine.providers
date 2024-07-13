@@ -45,7 +45,7 @@ namespace bielu.Examine.Umbraco.Indexers.Indexers
 
         //public bool PublishedValuesOnly => CurrentContentValueSetValidator?.PublishedValuesOnly ?? false;
 
-        public bool PublishedValuesOnly { get; protected set; } = false;
+        public bool PublishedValuesOnly { get; protected set; }
 
         public bool SupportProtectedContent { get; protected set; } = true;
 

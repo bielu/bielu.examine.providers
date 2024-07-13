@@ -12,7 +12,8 @@ builder.CreateUmbracoBuilder()
     .AddBieluExamineForUmbraco(bieluExamineConfigurator =>
     {
         bieluExamineConfigurator.AddFormProvider();
-        bieluExamineConfigurator.AddElasticsearchServices();
+      //  bieluExamineConfigurator.AddElasticsearchServices();
+      bieluExamineConfigurator.AddAzureSearchServices();
     })
     .Build();
 

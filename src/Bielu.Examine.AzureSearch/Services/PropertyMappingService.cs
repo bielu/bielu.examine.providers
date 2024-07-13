@@ -21,6 +21,10 @@ public class PropertyMappingService(BieluExamineConfiguration configuration) : I
     {
         var fieldType = field.Type.ToLowerInvariant();
         var fieldName = field.Name.FormatFieldName();
+        if (fieldName.StartsWith('_'))
+        {
+            fieldName = $"s{fieldName}";
+        }
         var azureSeachField = fieldType switch
         {
             var type when _dateFormats.Contains(type) => new SimpleField(fieldName, SearchFieldDataType.DateTimeOffset)
@@ -55,26 +59,27 @@ public class PropertyMappingService(BieluExamineConfiguration configuration) : I
             },
             "raw" => new SearchableField(fieldName)
             {
-                AnalyzerName = new LexicalAnalyzerName("keywordanalyzer"),
-                IsKey = true,
+                AnalyzerName = new LexicalAnalyzerName("keyword"),
+                IsKey = false,
                 IsFilterable = true,
                 IsSortable = true
             },
             "keyword" => new SearchableField(fieldName)
             {
-                AnalyzerName = new LexicalAnalyzerName("keywordanalyzer"),
-                IsKey = true,
+                AnalyzerName = new LexicalAnalyzerName("keyword"),
+                IsKey = false,
                 IsFilterable = true,
                 IsSortable = true
             },
             _ => new SearchableField(fieldName)
             {
-                AnalyzerName = new LexicalAnalyzerName("simpleanalyzer"),
-                IsKey = true,
+                AnalyzerName = new LexicalAnalyzerName("simple"),
+                IsKey = false,
                 IsFilterable = true,
                 IsSortable = true
             }
         };
+
         return azureSeachField;
     }
     private static string FromLuceneAnalyzer(string? analyzer)
@@ -103,23 +108,24 @@ public class PropertyMappingService(BieluExamineConfiguration configuration) : I
     public virtual IEnumerable<SearchFieldTemplate> GetAzureSearchMapping(ReadOnlyFieldDefinitionCollection properties, string analyzer)
     {
         var fields = new List<SearchFieldTemplate>();
+
         fields.Add(new SearchableField("Id")
         {
-            AnalyzerName = new LexicalAnalyzerName("keywordanalyzer"),
+            AnalyzerName = new LexicalAnalyzerName("keyword"),
             IsKey = true,
             IsFilterable = true,
             IsSortable = true
         });
-        fields.Add(new SearchableField(ExamineFieldNames.ItemIdFieldName.FormatFieldName())
+        fields.Add(new SearchableField(PrepareFieldName(ExamineFieldNames.ItemIdFieldName))
         {
-            AnalyzerName = new LexicalAnalyzerName("keywordanalyzer"),
+            AnalyzerName = new LexicalAnalyzerName("keyword"),
             IsKey = false,
             IsFilterable = true,
             IsSortable = true
         });
-        fields.Add(new SearchableField(ExamineFieldNames.CategoryFieldName.FormatFieldName())
+        fields.Add(new SearchableField(PrepareFieldName(ExamineFieldNames.CategoryFieldName))
         {
-            AnalyzerName = new LexicalAnalyzerName("keywordanalyzer"),
+            AnalyzerName = new LexicalAnalyzerName("keyword"),
             IsKey = false,
             IsFilterable = true,
             IsSortable = true
@@ -128,23 +134,24 @@ public class PropertyMappingService(BieluExamineConfiguration configuration) : I
         {
             foreach (var propertyName in mapping.Value)
             {
+                var name = PrepareFieldName(propertyName);
                 var field = mapping.Key switch
                 {
-                    "keyword" => new SearchableField(propertyName)
+                    "keyword" => new SearchableField(name)
                     {
-                        AnalyzerName = new LexicalAnalyzerName("keywordanalyzer"),
+                        AnalyzerName = new LexicalAnalyzerName("keyword"),
                         IsKey = false,
                         IsFilterable = true,
                         IsSortable = true
                     },
-                    "text" => new SearchableField(propertyName)
+                    "text" => new SearchableField(name)
                     {
-                        AnalyzerName = new LexicalAnalyzerName("simpleanalyzer"),
+                        AnalyzerName = new LexicalAnalyzerName("keyword"),
                         IsKey = false,
                         IsFilterable = true,
                         IsSortable = true
                     }, //todo: implement other types
-                    _ => new SearchableField(propertyName)
+                    _ => new SearchableField(name)
                     {
                         AnalyzerName = new LexicalAnalyzerName(mapping.Key),
                         IsKey = false,
@@ -161,5 +168,13 @@ public class PropertyMappingService(BieluExamineConfiguration configuration) : I
         }
 
         return fields;
+    }
+    private static string PrepareFieldName(string fieldName)
+    {
+        if(fieldName.StartsWith('_'))
+        {
+            return $"s{fieldName.FormatFieldName()}";
+        }
+        return fieldName.FormatFieldName();
     }
 }
