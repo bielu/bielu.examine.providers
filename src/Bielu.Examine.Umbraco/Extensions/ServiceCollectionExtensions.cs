@@ -1,8 +1,8 @@
 using Bielu.Examine.Core.Configuration;
 using Bielu.Examine.Core.Extensions;
 using Bielu.Examine.Core.Services;
-using bielu.Examine.Umbraco.Indexers;
-using bielu.Examine.Umbraco.Services;
+using Bielu.Examine.Elasticsearch.Umbraco.Services;
+using bielu.Examine.Umbraco.Indexers.Indexers;
 using Examine;
 using Examine.Lucene;
 using Microsoft.Extensions.DependencyInjection;

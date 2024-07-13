@@ -4,5 +4,5 @@ namespace Bielu.Examine.Core.Services;
 
 public interface IIndexStateService
 {
-    public ExamineIndexState GetIndexState(string indexName, ISearchService searchService);
+    public ExamineIndexState GetIndexState(string indexName, ISearchService searchService = null);
 }

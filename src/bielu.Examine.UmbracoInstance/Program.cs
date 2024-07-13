@@ -1,4 +1,3 @@
-using Bielu.Examine.AzureSearch.Extensions;
 using Bielu.Examine.Elasticsearch.Extensions;
 using Bielu.Examine.ElasticSearch.Umbraco.Form.Composer;
 using bielu.Examine.Umbraco.Extensions;

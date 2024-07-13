@@ -2,19 +2,19 @@
 using Azure.Search.Documents.Indexes;
 using Azure.Search.Documents.Indexes.Models;
 using Azure.Search.Documents.Models;
-using Bielu.Examine.AzureSearch.Events;
-using Bielu.Examine.AzureSearch.Extensions;
-using Bielu.Examine.AzureSearch.Model;
 using Bielu.Examine.Core.Extensions;
 using Bielu.Examine.Core.Models;
 using Bielu.Examine.Core.Queries;
 using Bielu.Examine.Core.Regex;
 using Bielu.Examine.Core.Services;
+using Bielu.Examine.Elasticsearch.Events;
+using Bielu.Examine.Elasticsearch.Extensions;
+using Bielu.Examine.Elasticsearch.Model;
+using Bielu.Examine.Elasticsearch.Services;
 using Examine;
 using Examine.Lucene.Search;
 using Examine.Search;
 using Lucene.Net.Analysis.Standard;
-using Lucene.Net.Documents;
 using Lucene.Net.Util;
 using Microsoft.Extensions.Logging;
 using Query = Lucene.Net.Search.Query;
@@ -29,15 +29,11 @@ public class AzureSearchService(IAzureSearchClientFactory factory, IIndexStateSe
         var client = GetIndexingClient(examineIndexName);
         var state = service.GetIndexState(examineIndexName,this);
         var aliasExist = client.GetAliases();
-        if(aliasExist.All(x=>x.Name !=state.IndexAlias))
-        {
-            return false;
-        }
-        var aliasExists = client.GetAlias(state.IndexAlias).Value;
-        if (aliasExists != null && aliasExists.Indexes.Count > 0)
+
+        if (AliasExist(state.IndexAlias))
         {
             state.Exist = true;
-            state.CurrentIndexName ??= aliasExists.Indexes[0];
+            state.CurrentIndexName ??= state.IndexAlias;
             return state.Exist;
         }
         state.Exist = false;
@@ -140,22 +136,47 @@ public class AzureSearchService(IAzureSearchClientFactory factory, IIndexStateSe
         if (state.Reindexing)
         {
             state.CurrentTemporaryIndexName = indexName;
+        }
+        else
+        {
+            state.CurrentIndexName = indexName;
+        }
+        var aliasExists = AliasExist(state.IndexAlias);
+        var aliasIndexes = GetIndexesAssignedToAlias(client, state.IndexAlias);
+        var indexesMappedToAlias = aliasExists
+            ? GetIndexesAssignedToAlias(client, state.IndexAlias).ToList()
+            : new List<String>();
+        if (state.Reindexing)
+        {
+            client.CreateIndex( new SearchIndex(indexName,fieldMapping.Select(x=>(SearchField)x).ToList()));
             return;
         }
-        state.CurrentIndexName = indexName;
-        var aliasState = client.GetAlias(state.IndexAlias);
-        var aliasExists = aliasState.Value != null && aliasState.Value.Indexes.Count > 0;
-
-        var indexesMappedToAlias = aliasExists
-            ? GetIndexesAssignedToAlias(client, indexName).ToList()
-            : new List<String>();
-        if (!aliasExists || aliasState.Value?.Indexes != null && (aliasState.Value?.Indexes).All(x => x != state.CurrentIndexName))
+        if (!aliasExists  || !aliasIndexes?.Contains(state.IndexName) == true)
         {
             var createAlias =  client.CreateOrUpdateAlias(state.IndexAlias, new SearchAlias(state.IndexAlias, state.CurrentIndexName));
         }
 
-
     }
+
+    private bool AliasExist(string alias)
+    {
+        var client = GetIndexingClient(alias);
+        var aliasExist = client.GetAliases();
+        if(aliasExist.All(x=>x.Name !=alias))
+        {
+            return false;
+        }
+        var aliasExists = client.GetAlias(alias).Value;
+        var state = service.GetIndexState(alias, this);
+        if (aliasExists != null && aliasExists.Indexes.Count > 0)
+        {
+            state.CurrentIndexName ??= aliasExists.Indexes[0];
+            return state.Exist;
+        }
+
+        return false;
+    }
+
     public IEnumerable<string>? GetPropertiesNames(string examineIndexName)
     {
         var client = GetIndexingClient(examineIndexName);

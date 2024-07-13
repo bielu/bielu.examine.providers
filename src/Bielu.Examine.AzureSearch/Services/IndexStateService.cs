@@ -1,6 +1,6 @@
-﻿using Bielu.Examine.AzureSearch.Configuration;
-using Bielu.Examine.Core.Models;
+﻿using Bielu.Examine.Core.Models;
 using Bielu.Examine.Core.Services;
+using Bielu.Examine.Elasticsearch.Configuration;
 using Microsoft.Extensions.Options;
 
 namespace Bielu.Examine.AzureSearch.Services;
