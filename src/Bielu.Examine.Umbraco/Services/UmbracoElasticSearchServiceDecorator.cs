@@ -8,7 +8,7 @@ using Umbraco.Cms.Core.Sync;
 
 namespace Bielu.Examine.Elasticsearch.Umbraco.Services;
 
-public class UmbracoElasticSearchServiceDecorator(ISearchService searchService, IServerRoleAccessor serverRoleAccessor) : ISearchService
+public class UmbracoSearchServiceDecorator(ISearchService searchService, IServerRoleAccessor serverRoleAccessor) : ISearchService
 {
 
     public bool IndexExists(string examineIndexName) => searchService.IndexExists(examineIndexName);
@@ -48,7 +48,7 @@ public class UmbracoElasticSearchServiceDecorator(ISearchService searchService, 
         return 0;
     }
     public int GetDocumentCount(string? examineIndexName) => searchService.GetDocumentCount(examineIndexName);
-    public bool HealthCheck(string? examineIndexNam) => searchService.HealthCheck(examineIndexNam);
+    public bool HealthCheck(string? examineIndexName) => searchService.HealthCheck(examineIndexName);
     public IQuery CreateQuery(string name, string? indexAlias, string category, BooleanOperation defaultOperation) => searchService.CreateQuery(name, indexAlias, category, defaultOperation);
     public IDisposable Subscribe(IObserver<TransformingObservable> observer) => searchService.Subscribe(observer);
 }

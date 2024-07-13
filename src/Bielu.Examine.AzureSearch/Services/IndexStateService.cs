@@ -1,15 +1,14 @@
-﻿using Bielu.Examine.Core.Models;
+﻿using Bielu.Examine.AzureSearch.Configuration;
+using Bielu.Examine.Core.Models;
 using Bielu.Examine.Core.Services;
-using Bielu.Examine.Elasticsearch.Configuration;
-using Bielu.Examine.Elasticsearch.Model;
 using Microsoft.Extensions.Options;
 
-namespace Bielu.Examine.Elasticsearch.Services;
+namespace Bielu.Examine.AzureSearch.Services;
 
 public class IndexStateService(IOptionsMonitor<BieluExamineAzureSearchOptions> examineElasticOptions) : IIndexStateService
 {
     private Dictionary<string,ExamineIndexState> _indexStates = new Dictionary<string,ExamineIndexState>();
-    public ExamineIndexState GetIndexState(string indexName)
+    public ExamineIndexState GetIndexState(string indexName, ISearchService? searchService = null)
     {
         if(_indexStates.TryGetValue(indexName, out var state))
         {
@@ -27,7 +26,12 @@ public class IndexStateService(IOptionsMonitor<BieluExamineAzureSearchOptions> e
         }
         state.IndexAlias = $"{prefix}{indexName.ToLowerInvariant()}";
         state.TempIndexAlias = $"{prefix}temp_{indexName.ToLowerInvariant()}";
+        if (searchService != null)
+        {
+            state.Exist = searchService.IndexExists(state.IndexAlias);
+        }
         _indexStates[indexName] = state;
         return state;
     }
+
 }
