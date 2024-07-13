@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using Bielu.Examine.Core.Services;
 using Bielu.Examine.Elasticsearch.Providers;
 using Microsoft.Extensions.Logging;
@@ -15,8 +15,8 @@ public class ElasticBieluSearchManager(IIndexStateService stateService, ILoggerF
         {
             return searcher;
         }
-        var state = stateService.GetIndexState(indexName);
-        searcher = new ElasticsearchExamineSearcher(indexName, state.IndexAlias, loggerFactory, service);
+        var state = stateService.GetIndexState(indexName, service);
+        searcher = new ElasticsearchExamineSearcher(indexName, state.IndexAlias, loggerFactory, service, stateService);
         _searchers.TryAdd(indexName, searcher);
         return searcher;
     }

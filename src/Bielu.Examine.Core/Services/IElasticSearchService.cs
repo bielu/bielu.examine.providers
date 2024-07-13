@@ -5,7 +5,7 @@ using Lucene.Net.Search;
 
 namespace Bielu.Examine.Core.Services;
 
-public interface ISearchService
+public interface ISearchService : IObservable<TransformingObservable>
 {
     public bool IndexExists(string examineIndexName);
     public IEnumerable<string>? GetCurrentIndexNames(string examineIndexName);

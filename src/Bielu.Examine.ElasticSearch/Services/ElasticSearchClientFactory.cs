@@ -1,4 +1,4 @@
-﻿using Bielu.Examine.Elasticsearch.Configuration;
+using Bielu.Examine.Elasticsearch.Configuration;
 using Bielu.Examine.Elasticsearch.Constants;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Transport;
@@ -8,7 +8,7 @@ namespace Bielu.Examine.Elasticsearch.Services;
 
 public class ElasticSearchClientFactory(IOptionsMonitor<BieluExamineElasticOptions> examineElasticOptions) : IElasticSearchClientFactory
 {
-    Dictionary<string?, ElasticsearchClient> _clients = new Dictionary<string?, ElasticsearchClient>();
+    Dictionary<string, ElasticsearchClient> _clients = new Dictionary<string, ElasticsearchClient>();
 
     public ElasticsearchClient GetOrCreateClient(string? indexName)
     {

@@ -1,4 +1,4 @@
-﻿using Bielu.Examine.Core.Models;
+using Bielu.Examine.Core.Models;
 using Bielu.Examine.Core.Queries;
 using Bielu.Examine.Core.Services;
 using Bielu.Examine.Elasticsearch.Configuration;
@@ -22,28 +22,16 @@ using Query = Elastic.Clients.Elasticsearch.QueryDsl.Query;
 
 namespace Bielu.Examine.Elasticsearch.Providers;
 
-public class ElasticsearchExamineSearcher(string name, string? indexAlias, ILoggerFactory loggerFactory, ISearchService elasticsearchService) : BaseSearchProvider(name),IBieluExamineSearcher, IDisposable
+public class ElasticsearchExamineSearcher(string name, string? indexAlias, ILoggerFactory loggerFactory, ISearchService elasticsearchService, IIndexStateService indexStateService) : BaseSearchProvider(name),IBieluExamineSearcher, IDisposable
 {
     public string? IndexAlias => indexAlias;
     private readonly List<SortField> _sortFields = new List<SortField>();
     private string?[] _allFields;
     private IEnumerable<ExamineProperty>? _fieldsMapping;
-    private bool? _exists;
-
+    private ExamineIndexState IndexState => indexStateService.GetIndexState(name, elasticsearchService);
 
     private static readonly string[]? _emptyFields = Array.Empty<string>();
-    public bool IndexExists
-    {
-        get
-        {
-            if(_exists.HasValue)
-            {
-                return (bool)_exists;
-            }
-            _exists = elasticsearchService.IndexExists(name);
-            return (bool)_exists;
-        }
-    }
+    public bool IndexExists => IndexState.Exist;
 
 
     public string[] AllFields

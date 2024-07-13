@@ -19,6 +19,7 @@
       </PackageReference>
       <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions">
       </PackageReference>
+      <PackageReference Include="Scrutor" />
     </ItemGroup>
 
     <ItemGroup>

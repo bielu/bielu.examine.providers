@@ -1,7 +1,8 @@
-﻿using Bielu.Examine.Core.Services;
+using Bielu.Examine.Core.Services;
 using Examine;
 using Microsoft.Extensions.Logging;
 using Umbraco.Cms.Core;
+using Umbraco.Cms.Core.Cache;
 using Umbraco.Cms.Core.Runtime;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Infrastructure.Examine;
@@ -18,6 +19,7 @@ public class ElasticsearchExamineIndexRebuilder :IIndexRebuilder
     private readonly IEnumerable<IIndexPopulator> _populators;
     private readonly object _rebuildLocker = new();
     private readonly IRuntimeState _runtimeState;
+    private readonly IAppPolicyCache _runtimeCache;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="ExamineIndexRebuilder" /> class.
@@ -28,7 +30,8 @@ public class ElasticsearchExamineIndexRebuilder :IIndexRebuilder
         ILogger<ExamineIndexRebuilder> logger,
         IExamineManager examineManager,
         IEnumerable<IIndexPopulator> populators,
-        IBackgroundTaskQueue backgroundTaskQueue)
+        IBackgroundTaskQueue backgroundTaskQueue,
+        AppCaches appCaches)
     {
         _mainDom = mainDom;
         _runtimeState = runtimeState;
@@ -36,6 +39,7 @@ public class ElasticsearchExamineIndexRebuilder :IIndexRebuilder
         _examineManager = examineManager;
         _populators = populators;
         _backgroundTaskQueue = backgroundTaskQueue;
+        _runtimeCache = appCaches.RuntimeCache;
     }
 
     public bool CanRebuild(string indexName)
@@ -164,10 +168,16 @@ public class ElasticsearchExamineIndexRebuilder :IIndexRebuilder
 
                     populator.Populate(index);
                 }
+
                 if (index is IBieluExamineIndex elasticIndex)
                 {
+                    // Reset the ExamineManagementController cache for 1 second  
+                    var cacheKey = "temp_indexing_op_" + indexName;
+                    _runtimeCache.Insert(cacheKey, () => "tempValue", TimeSpan.FromSeconds(1));
+
                     elasticIndex.SwapIndex();
                 }
+
             }
         }
         finally
