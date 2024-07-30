@@ -1,23 +1,14 @@
 using Bielu.Examine.Core.Models;
-using Bielu.Examine.Core.Queries;
 using Bielu.Examine.Core.Services;
-using Bielu.Examine.Elasticsearch.Configuration;
-using Bielu.Examine.Elasticsearch.Extensions;
 using Bielu.Examine.Elasticsearch.Model;
-using Bielu.Examine.Elasticsearch.Services;
 using Elastic.Clients.Elasticsearch;
-using Elastic.Clients.Elasticsearch.IndexManagement;
-using Elastic.Clients.Elasticsearch.Mapping;
 using Elastic.Clients.Elasticsearch.QueryDsl;
-using Elastic.Transport.Extensions;
 using Examine;
 using Examine.Lucene.Search;
 using Examine.Search;
-using Lucene.Net.Analysis.Standard;
+using Lucene.Net.Analysis;
 using Lucene.Net.Search;
-using Lucene.Net.Util;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Query = Elastic.Clients.Elasticsearch.QueryDsl.Query;
 
 namespace Bielu.Examine.Elasticsearch.Providers;
@@ -98,9 +89,15 @@ public class ElasticsearchExamineSearcher(string name, string? indexAlias, ILogg
             return _parsedValues;
         }
     }
+
+
     public override IQuery CreateQuery(string category = null,
-        BooleanOperation defaultOperation = BooleanOperation.And) => elasticsearchService.CreateQuery(name, indexAlias, category, defaultOperation);
- #pragma warning disable CA1816
+        BooleanOperation defaultOperation = BooleanOperation.And) => elasticsearchService.CreateQuery(name, indexAlias, category, defaultOperation, null, null);
+
+    public IQuery CreateQuery(string category, BooleanOperation defaultOperation, Analyzer? luceneAnalyzer, LuceneSearchOptions? searchOptions) => elasticsearchService.CreateQuery(name, indexAlias, category, defaultOperation, luceneAnalyzer, searchOptions);
+
+
+#pragma warning disable CA1816
     public void Dispose() => loggerFactory.Dispose();
  #pragma warning restore CA1816
 }

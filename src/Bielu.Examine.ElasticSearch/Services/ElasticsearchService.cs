@@ -12,6 +12,7 @@ using Elastic.Clients.Elasticsearch.QueryDsl;
 using Examine;
 using Examine.Lucene.Search;
 using Examine.Search;
+using Lucene.Net.Analysis;
 using Lucene.Net.Analysis.Standard;
 using Lucene.Net.Documents;
 using Lucene.Net.Util;
@@ -315,11 +316,12 @@ public class ElasticsearchService(
                client.Cluster.Health().Status == HealthStatus.Yellow;
     }
 
-    public IQuery CreateQuery(string name, string? indexAlias, string category, BooleanOperation defaultOperation) =>
+    public IQuery CreateQuery(string name, string? indexAlias, string category, BooleanOperation defaultOperation, Analyzer? luceneAnalyzer, LuceneSearchOptions? searchOptions) =>
         new BieluExamineQuery(name, indexAlias,
             new ElasticSearchQueryParser(LuceneVersion.LUCENE_CURRENT, GetPropertiesNames(name).ToArray(),
-                new StandardAnalyzer(LuceneVersion.LUCENE_48)), this, loggerFactory,
-            loggerFactory.CreateLogger<BieluExamineQuery>(), category, new LuceneSearchOptions(), defaultOperation);
+              luceneAnalyzer ?? new StandardAnalyzer(LuceneVersion.LUCENE_48)), this, loggerFactory,
+            loggerFactory.CreateLogger<BieluExamineQuery>(), category, searchOptions ?? new LuceneSearchOptions(), defaultOperation);
+
 
     private static string CreateIndexName(string indexAlias)
     {

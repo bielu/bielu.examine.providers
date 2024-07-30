@@ -1,7 +1,9 @@
-﻿using Bielu.Examine.Core.Models;
+using Bielu.Examine.Core.Models;
 using Bielu.Examine.Core.Services;
 using Examine;
+using Examine.Lucene.Search;
 using Examine.Search;
+using Lucene.Net.Analysis;
 using Lucene.Net.Documents;
 using Lucene.Net.Search;
 using Umbraco.Cms.Core.Sync;
@@ -49,6 +51,6 @@ public class UmbracoElasticSearchServiceDecorator(ISearchService searchService, 
     }
     public int GetDocumentCount(string? examineIndexName) => searchService.GetDocumentCount(examineIndexName);
     public bool HealthCheck(string? examineIndexNam) => searchService.HealthCheck(examineIndexNam);
-    public IQuery CreateQuery(string name, string? indexAlias, string category, BooleanOperation defaultOperation) => searchService.CreateQuery(name, indexAlias, category, defaultOperation);
+    public IQuery CreateQuery(string name, string? indexAlias, string category, BooleanOperation defaultOperation, Analyzer? luceneAnalyzer, LuceneSearchOptions? searchOptions) => searchService.CreateQuery(name, indexAlias, category, defaultOperation, luceneAnalyzer, searchOptions);
     public IDisposable Subscribe(IObserver<TransformingObservable> observer) => searchService.Subscribe(observer);
 }

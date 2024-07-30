@@ -1,6 +1,8 @@
-﻿using Bielu.Examine.Core.Models;
+using Bielu.Examine.Core.Models;
 using Examine;
+using Examine.Lucene.Search;
 using Examine.Search;
+using Lucene.Net.Analysis;
 using Lucene.Net.Search;
 
 namespace Bielu.Examine.Core.Services;
@@ -19,5 +21,5 @@ public interface ISearchService : IObservable<TransformingObservable>
     long DeleteBatch(string? examineIndexName, IEnumerable<string> itemIds);
     int GetDocumentCount(string? examineIndexName);
     bool HealthCheck(string? examineIndexNam);
-    IQuery CreateQuery(string name, string? indexAlias, string category, BooleanOperation defaultOperation);
+    IQuery CreateQuery(string name, string? indexAlias, string category, BooleanOperation defaultOperation, Analyzer? luceneAnalyzer, LuceneSearchOptions? searchOptions);
 }

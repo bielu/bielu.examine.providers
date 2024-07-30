@@ -11,6 +11,8 @@ using Umbraco.Cms.Core.DependencyInjection;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Infrastructure.Examine;
 using Umbraco.Extensions;
+using bielu.Examine.Umbraco.Services.QueryBuilders;
+using Umbraco.Cms.Api.Delivery.Services.QueryBuilders;
 
 namespace bielu.Examine.Umbraco.Extensions;
 
@@ -19,12 +21,14 @@ public static class UmbracoBuilderExtensions
     public static IUmbracoBuilder AddBieluExamineForUmbraco(this IUmbracoBuilder builder, Action<BieluExamineConfigurator?> configure)
     {
         builder.Services.AddCoreServices(configure);
+
         var config= BieluExamineConfiguration.Instance;
         if (config.FieldAnalyzerFieldMapping.TryGetValue("keyword", out var keyword))
         {
             keyword.Add(BieluExamineUmbracoIndex.IndexPathFieldName);
         }
         builder.Services.AddUnique<IIndexRebuilder, ElasticsearchExamineIndexRebuilder>();
+        builder.Services.AddSingleton<IApiContentQueryFactory, ApiContentQueryFactory>();
 
         builder.Services.AddSingleton<IIndexDiagnosticsFactory, LuceneIndexDiagnosticsFactory>();
         builder.Services.AddBieluExamineIndex<BieluExamineUmbracoContentIndex>(global::Umbraco.Cms.Core.Constants.UmbracoIndexes
