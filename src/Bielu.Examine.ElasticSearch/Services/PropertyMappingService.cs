@@ -3,7 +3,6 @@ using Bielu.Examine.Core.Extensions;
 using Bielu.Examine.Elasticsearch.Model;
 using Elastic.Clients.Elasticsearch.Mapping;
 using Examine;
-using Lucene.Net.Analysis;
 
 namespace Bielu.Examine.Elasticsearch.Services;
 
@@ -28,10 +27,11 @@ public class PropertyMappingService(BieluExamineConfiguration configuration) : I
             "float" => descriptor.FloatNumber(fieldName),
             "long" => descriptor.LongNumber(fieldName),
             var type when _integerFormats.Contains(type) => descriptor.IntegerNumber(fieldName),
-            "raw" => descriptor.Keyword(fieldName),
+            "raw" => descriptor.Text(fieldName, configure => configure.Analyzer("keyword")),
             "keyword" => descriptor.Keyword(fieldName),
             _ => descriptor.Text(fieldName, configure => configure.Analyzer(FromLuceneAnalyzer(analyzer)))
         };
+
     }
     private static string FromLuceneAnalyzer(string? analyzer)
     {
