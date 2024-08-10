@@ -34,6 +34,6 @@ public class ConfigureUmbracoFormsIndexOptions :
             return;
         options.Analyzer = (Analyzer)new CultureInvariantWhitespaceAnalyzer();
         options.Validator = (IValueSetValidator)new RecordValueSetValidator();
-        options.FieldDefinitions = new FieldDefinitionCollection(new FieldDefinition[] { });
+        options.FieldDefinitions = new FieldDefinitionCollection([]);
     }
 }

@@ -20,6 +20,6 @@ public interface ISearchService : IObservable<TransformingObservable>
     long IndexBatch(string? examineIndexName, IEnumerable<ValueSet> values);
     long DeleteBatch(string? examineIndexName, IEnumerable<string> itemIds);
     int GetDocumentCount(string? examineIndexName);
-    bool HealthCheck(string? examineIndexNam);
+    bool HealthCheck(string? examineIndexName);
     IQuery CreateQuery(string name, string? indexAlias, string category, BooleanOperation defaultOperation, Analyzer? luceneAnalyzer, LuceneSearchOptions? searchOptions);
 }

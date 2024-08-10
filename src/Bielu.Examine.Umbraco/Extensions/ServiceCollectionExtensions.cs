@@ -1,6 +1,7 @@
 using Bielu.Examine.Core.Configuration;
 using Bielu.Examine.Core.Extensions;
 using Bielu.Examine.Core.Services;
+using Bielu.Examine.Elasticsearch.Umbraco.Services;
 using bielu.Examine.Umbraco.Indexers.Indexers;
 using Examine;
 using Examine.Lucene;
@@ -40,6 +41,7 @@ public static class UmbracoBuilderExtensions
         builder.Services.AddBieluExamineIndex<BieluExamineUmbracoDeliveryApiContentIndex>(global::Umbraco.Cms.Core.Constants.UmbracoIndexes
             .DeliveryApiContentIndexName);
         builder.Services.AddSingleton<IExamineManager, ExamineManager<IBieluExamineIndex>>();
+        builder.Services.Decorate<ISearchService, UmbracoSearchServiceDecorator>();
 
         return builder;
     }

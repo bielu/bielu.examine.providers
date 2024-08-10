@@ -372,7 +372,9 @@ public class ElasticsearchService(
             }
             catch (Exception e)
             {
+#pragma warning disable CA1848
                 logger.LogError(e, "Failed to index document {NodeID}", d.Id);
+#pragma warning restore CA1848
 
                 foreach (var observer in _observers)
                 {
