@@ -2,14 +2,14 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bielu.Examine.Core", "Bielu.Examine.Core\Bielu.Examine.Core.csproj", "{05712520-55F7-4E09-A0FF-AB5541569F27}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bielu.Examine.Elasticsearch", "Bielu.Examine.Elasticsearch\Bielu.Examine.Elasticsearch.csproj", "{6DE9F1F7-914A-4232-8B25-06C4603E0041}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bielu.Examine.Elasticsearch", "Bielu.Examine.Elasticsearch\Bielu.Examine.ElasticSearch.csproj", "{6DE9F1F7-914A-4232-8B25-06C4603E0041}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SchemaGenerator", "SchemaGenerator\SchemaGenerator.csproj", "{88B82586-1590-4B51-A437-A7C71E21863D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "bielu.Examine.UmbracoInstance", "bielu.Examine.UmbracoInstance\bielu.Examine.UmbracoInstance.csproj", "{D499496B-12AE-4823-8BC4-B575568FA5A5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bielu.Examine.Umbraco", "Bielu.Examine.Umbraco\Bielu.Examine.Umbraco.csproj", "{7D59D9BF-4194-4569-B35A-6F0ACF9F0BC3}"
-EndProject
+EndProject 
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bielu.Examine.OpenSearch", "Bielu.Examine.OpenSearch\Bielu.Examine.OpenSearch.csproj", "{17D3775E-4FDB-466D-A5FC-7E636C9D3016}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionsFiles", "SolutionsFiles", "{AE8F8534-8D86-4107-9962-71C665CD3724}"
