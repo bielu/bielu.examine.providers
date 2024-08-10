@@ -2,7 +2,7 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bielu.Examine.Core", "Bielu.Examine.Core\Bielu.Examine.Core.csproj", "{05712520-55F7-4E09-A0FF-AB5541569F27}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bielu.Examine.Elasticsearch", "Bielu.Examine.Elasticsearch\Bielu.Examine.ElasticSearch.csproj", "{6DE9F1F7-914A-4232-8B25-06C4603E0041}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bielu.Examine.Elasticsearch", "Bielu.Examine.Elasticsearch\Bielu.Examine.Elasticsearch.csproj", "{6DE9F1F7-914A-4232-8B25-06C4603E0041}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SchemaGenerator", "SchemaGenerator\SchemaGenerator.csproj", "{88B82586-1590-4B51-A437-A7C71E21863D}"
 EndProject
