@@ -10,6 +10,7 @@ using Bielu.Examine.Elasticsearch.Services;
 using Examine;
 using Examine.Lucene.Search;
 using Examine.Search;
+using Lucene.Net.Analysis;
 using Lucene.Net.Analysis.Standard;
 using Lucene.Net.Search;
 using Lucene.Net.Util;
@@ -67,6 +68,8 @@ public class AzureSearchExamineSearcher(string name, string? indexAlias, ILogger
         }
     }
 
+
+
     private BieluExamineSearchResults DoSearch(Query query, QueryOptions options)
     {
         return elasticsearchService.Search(name,options,query);
@@ -98,8 +101,11 @@ public class AzureSearchExamineSearcher(string name, string? indexAlias, ILogger
     public override IQuery CreateQuery(string category = null,
         BooleanOperation defaultOperation = BooleanOperation.And)
     {
-        return elasticsearchService.CreateQuery(name, indexAlias, category, defaultOperation);
+        return elasticsearchService.CreateQuery(name, indexAlias, category, defaultOperation,null ,null);
     }
+    public IQuery CreateQuery(string category, BooleanOperation defaultOperation, Analyzer? luceneAnalyzer,
+        LuceneSearchOptions? searchOptions) => elasticsearchService.CreateQuery(name, indexAlias, category, defaultOperation, luceneAnalyzer, searchOptions);
+
  #pragma warning disable CA1816
     public void Dispose() => loggerFactory.Dispose();
  #pragma warning restore CA1816

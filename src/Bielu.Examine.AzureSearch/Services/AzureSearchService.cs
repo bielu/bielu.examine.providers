@@ -14,6 +14,7 @@ using Bielu.Examine.Elasticsearch.Services;
 using Examine;
 using Examine.Lucene.Search;
 using Examine.Search;
+using Lucene.Net.Analysis;
 using Lucene.Net.Analysis.Standard;
 using Lucene.Net.Util;
 using Microsoft.Extensions.Logging;
@@ -269,7 +270,9 @@ public class AzureSearchService(IAzureSearchClientFactory factory, IIndexStateSe
         var index=client.GetIndex(state.IndexAlias);
         return index.HasValue && index.Value.Fields.Any();
     }
-    public IQuery CreateQuery(string name, string? indexAlias, string category, BooleanOperation defaultOperation) => new BieluExamineQuery(name, indexAlias, new ElasticSearchQueryParser(LuceneVersion.LUCENE_CURRENT, GetPropertiesNames(name).ToArray(), new StandardAnalyzer(LuceneVersion.LUCENE_48)), this, loggerFactory, loggerFactory.CreateLogger<BieluExamineQuery>(), category, new LuceneSearchOptions(), defaultOperation);
+
+    public IQuery CreateQuery(string name, string? indexAlias, string category, BooleanOperation defaultOperation,
+        Analyzer? luceneAnalyzer, LuceneSearchOptions? searchOptions) => new BieluExamineQuery(name, indexAlias, new ElasticSearchQueryParser(LuceneVersion.LUCENE_CURRENT, GetPropertiesNames(name).ToArray(), new StandardAnalyzer(LuceneVersion.LUCENE_48)), this, loggerFactory, loggerFactory.CreateLogger<BieluExamineQuery>(), category, searchOptions, defaultOperation);
     private static string CreateIndexName(string indexAlias)
     {
         return $"{indexAlias}_{DateTime.UtcNow:yyyyMMddHHmmss}";
