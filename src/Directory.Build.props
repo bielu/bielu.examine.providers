@@ -11,6 +11,8 @@
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <RepositoryUrl>https://github.com/bielu/bielu.examine.providers.git</RepositoryUrl> 
+        <RepositoryType>git</RepositoryType> 
     </PropertyGroup>
 
     <PropertyGroup>
