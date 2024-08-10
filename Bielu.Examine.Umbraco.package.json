@@ -1,0 +1,20 @@
+﻿{
+  "$schema": "https://marketplace.umbraco.com/umbraco-marketplace-schema.json",
+  "AuthorDetails": {
+    "Name": "Arkadiusz Biel",
+    "Description": "",
+    "Url": "https://github.com/bielu/",
+    "SyncContributorsFromRepository": true
+  },
+  "Category": "Search",
+ "PackageType": "Integration",
+  "RelatedPackages": [
+    {
+      "GroupTitle": "Providers",
+      "PackageId": "Bielu.Examine.Elasticsearch",
+      "Description": "Elasticsearch provider for Examine, which support aliasing"
+    }
+  ],
+  "Tags": ["examine", "Elasticsearch", "search"],
+  "Title": "Bielu Examine providers"
+}

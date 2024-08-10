@@ -6,6 +6,7 @@
         <Nullable>enable</Nullable>
       <IsPackable>True</IsPackable>
       <RootNamespace>bielu.Examine.Umbraco</RootNamespace>
+      <PackageTags>umbraco-marketplace, umbraco, examine, loadbalancing</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
