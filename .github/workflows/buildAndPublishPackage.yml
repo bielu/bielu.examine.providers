@@ -38,6 +38,10 @@ jobs:
       always()
       && contains(needs.*.result, 'success')
       && !contains(needs.*.result, 'failure')
+    # Trusted publishing: lets releaseNuget.yml exchange an OIDC token for a nuget.org key.
+    permissions:
+      contents: read
+      id-token: write
     uses: bielu/bielu.GithubActions.Templates/.github/workflows/releaseNuget.yml@main
     secrets:
       NUGET_APIKEY: ${{ secrets.NUGET_APIKEY }}
